@@ -147,12 +147,12 @@ def read_lockstat_data( filename):
 
 	return usage
 
-def plot ( usage, outfile, title):
+def plot( usage, outfile, title, key):
 	labels = []
 	waittime= []
-	for usage in sorted( usage, key=lambda x: x["waittime-total"]):
+	for usage in sorted( usage, key=lambda x: x[key]):
 		labels.append( usage["name"])
-		waittime.append( usage["waittime-total"])
+		waittime.append( usage[key])
 
 	bar_plot_stacked( outfile, title, waittime, labels, 0)
 
@@ -162,4 +162,5 @@ if __name__ == "__main__":
 
 	usage = read_lockstat_data( "%s/lock_stat" % sys.argv[1])
 
-	plot( usage, "%s/waittime.svg" % sys.argv[1], "waittime total")
+	plot( usage, "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
+	plot( usage, "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")

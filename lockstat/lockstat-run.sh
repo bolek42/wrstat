@@ -50,4 +50,4 @@ end_t=`date +%H-%M-%S`
 
 sudo cat /proc/lock_stat > "$test_dir/lock_stat"
 
-
+python "$tool_path/lockstat-graph.py" "$test_dir"
