@@ -76,9 +76,9 @@ if __name__ == "__main__":
 		print "usage: %s test_dir" % sys.argv[0]
 		exit(1)
 
-	sample_file = open( "%s/samples" % sys.argv[1], "r")
+	samples = []
+	with open( "%s/samples" % sys.argv[1], 'r') as f:
+		samples.append( pickle.load( f))
 
-	sample = pickle.load( sample_file)
-
-	plot( sample, "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
-	plot( sample, "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
+	plot( samples[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
+	plot( samples[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")

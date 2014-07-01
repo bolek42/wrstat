@@ -6,6 +6,9 @@ import csv
 import numpy
 import operator
 import pickle
+import signal
+import thread
+import threading
 
 def lockstat_parse_lock_class( row):
 	if len( row) < 11:
@@ -32,7 +35,6 @@ def lockstat_parse_lock_class( row):
 	return usage
 
 def lockstat_parse_lock( row):
-	print row
 	lock = { "con-bounces" : int( row[1]),
 		"addr" : row[2],
 		"symbol" : row[3]}
@@ -47,8 +49,6 @@ def lockstat_read( filename):
 	raw = raw[ 4::] #discard version and header
 	#remove whitespaces and empty lines
 	rows = map( lambda row: filter(lambda s: s != '', row), raw)
-	for row in rows:
-		print row
 
 	lock_classes = []
 
@@ -81,13 +81,31 @@ def lockstat_read( filename):
 	file.close()
 	return lock_classes
 
+def lockstat_capture():
+	sample_file_mutex.acquire()
+	threading.Timer(0.5, lockstat_capture).start();
+
+	print "sample"
+	# If you want to make file I/O more efficient, reimplement in C
+	pickle.dump( lockstat_read( "/proc/lock_stat"), sample_file)
+	sample_file_mutex.release()
+
+def signal_handler(signal, frame):
+	print "captured signal " + str( signal)
+	sample_file_mutex.acquire()
+	sample_file.close()
+        sys.exit(0)
+
 if __name__ == "__main__":
 	if len( sys.argv) != 2:
 		print "usage: %s samplefile" % sys.argv[0]
 		exit(1)
 
 	sample_file = open( sys.argv[1], "w")
+	sample_file_mutex = thread.allocate_lock()
 
-	# If you want to make file I/O more efficient, reimplement in C
-	pickle.dump( lockstat_read( "/proc/lock_stat"), sample_file)
+	signal.signal(signal.SIGINT, signal_handler)
+	signal.signal(signal.SIGTERM, signal_handler)
 
+	print "capturing samples, use CTRL+C or SIGTERM to end"
+	lockstat_capture()

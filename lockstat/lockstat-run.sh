@@ -38,6 +38,9 @@ echo "$cmd" > "$test_dir/cmd"
 echo "clearing lockstat"
 sudo su -m -c "echo 0 > /proc/lock_stat"
 
+sudo python "$tool_path/lockstat-sampling-deamon.py" "$sample_file"&
+sampling_deamon_pid=$!
+
 ##############
 begin_t=`date +%H-%M-%S`
 
@@ -45,11 +48,12 @@ begin_t=`date +%H-%M-%S`
 echo eval $cmd
 eval $cmd $i &> "$test_dir/user_output"
 
-sudo python "$tool_path/lockstat-sampling-deamon.py" "$sample_file"
 sudo chown $USER "$sample_file"
 
 end_t=`date +%H-%M-%S`
 ##############
+
+sudo kill -SIGTERM $sampling_deamon_pid
 
 sudo cat /proc/lock_stat > "$test_dir/lock_stat"
 
