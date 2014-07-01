@@ -18,8 +18,8 @@ def lockstat_parse_lock_class( row):
 	lockname = " ".join( row[ 0 : len( row) - 11 + 1])[0:-1]
 	data = row[ len( row) - 11 + 1 ::]
 	usage = {"name" : lockname,
-		"read_locks" : [],
-		"write_locks" : [],
+		"read-locks" : [],
+		"write-locks" : [],
 		"con-bounces" : int( data[0]),
 		"contentions" : int( data[1]),
 		"waittime-min" : float( data[2]),

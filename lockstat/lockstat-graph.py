@@ -114,8 +114,72 @@ def plot_topn( samples, sample_rate, item, n, file, title):
 		plots.append( Gnuplot.PlotItems.Data( series, with_="lines", title=lock_class["name"]))
 
 	g.plot( *plots)
-		
 
+#term item
+def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
+	g = Gnuplot.Gnuplot( debug=0)
+	g( "set terminal svg")
+
+	#determine top n
+	top_names = []
+	for key, value in samples[-1].iteritems():
+		top_names.append( value)
+
+	top_names = sorted( top_names, key=lambda x: x[sort_key], reverse = True)
+	
+	#actual plot
+	all = []
+	for i in range( n):
+		class_name = top_names[i]["name"]
+		print class_name
+
+		#calculating curves
+		waittime = []
+		contentions = []
+		con_bounce = []
+		for j in range( len( samples) - 1):
+			if class_name in samples[j]:
+				wt = ( samples[j+1][ class_name]["waittime-total"] - 
+					samples[j][ class_name]["waittime-total"]   )
+
+				ct = ( samples[j+1][ class_name]["contentions"] - 
+					samples[j][ class_name]["contentions"]   )
+				cb = ( samples[j+1][ class_name]["con-bounces"] - 
+					samples[j][ class_name]["con-bounces"]   )
+
+			else:
+				wt = ct = cb = 0.0
+
+			waittime.append( (j / float( sample_rate), wt / 1e4 * sample_rate))
+			contentions.append( (j / float( sample_rate), ct * 100 * sample_rate))
+			con_bounce.append( (j / float( sample_rate), cb * 100 * sample_rate))
+
+
+		plots = []
+
+		#plot
+		g( "set output '%s/top-%d.svg'" % ( path, i))
+		g( "clear")
+
+		g( "set multiplot layout 2,2 title '%s'" % class_name)
+		g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
+
+
+		g( "set title 'Waittime'")
+		g.plot(Gnuplot.PlotItems.Data( waittime, with_="lines"))
+		g("unset object 1")
+
+		g( "set title 'Contentions - Bounces'")
+		g( "set ylabel '#/s'")
+		g( "set key bottom right")
+		g( "set key outside")
+		g( "set key bmargin")
+		g( "set key horizontal")
+		g.plot(	Gnuplot.PlotItems.Data( con_bounce, with_="lines", title="bounce"),
+			Gnuplot.PlotItems.Data( contentions, with_="lines", title="cont.") )
+		g( "set key default")
+
+		g( "unset multiplot")
 
 if __name__ == "__main__":
 	if len( sys.argv) != 2:
@@ -132,6 +196,6 @@ if __name__ == "__main__":
 	plot( samples[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
 
 	plot_topn( samples, 2, "holdtime-total", 8, "%s/hold-time-sreies.svg" % sys.argv[1], "Total Hold Time")
-	plot_topn( samples, 2, "waittime-total", 8, "%s/wait-time-sreies.svg" % sys.argv[1], "Total Wait Time")
+	plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
 
 
