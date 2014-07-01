@@ -72,52 +72,67 @@ def plot( usage, outfile, title, key):
 
 	bar_plot_stacked( outfile, title, waittime, labels, 0)
 
-if __name__ == "__main__":
-	if len( sys.argv) != 2:
-		print "usage: %s test_dir" % sys.argv[0]
-		exit(1)
+#term item
+def plot_topn( samples, sample_rate, item, n, file, title):
+	g = Gnuplot.Gnuplot( debug=0)
+	g( "set terminal svg")
+	g( "set output '%s'" % file)
+	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 
-	samples = []
-	with open( "%s/samples" % sys.argv[1], 'r') as f:
-		#TODO ugly!
-		while 1:
-			print "sample"
-			try:
-				samples.append( pickle.load( f))
-			except:
-				break
-	#plot( samples[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
-	#plot( samples[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
-
-	#plot samples
-	g = Gnuplot.Gnuplot(debug=1)
-	g('set style data lines')
-	g("set terminal svg")
-	g("set output '%s/hold-time-sreies.svg'" % sys.argv[1])
-	g('set multiplot')
-	g("set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
+	g( "set title '%s'" % title)
+	g( "set key outside")
+	#g( "set key right top")
+	g( "set key bottom right")
+	g( "set key horizontal")
+	#g( "set key reverse")
+	g( "set key bmargin")
+	g( "set xlabel 'runtime ( sec)'")
+	g( "set ylabel 'percentage'")
 
 	#determine top n
 	top_names = []
 	for key, value in samples[-1].iteritems():
 		top_names.append( value)
-	top_names = sorted( top_names, key=lambda x: x["holdtime-total"], reverse = True)
+
+	top_names = sorted( top_names, key=lambda x: x[item], reverse = True)
 	
 	#actual plot
 	all = []
-	for lock_class in top_names:
+	plots = []
+	for lock_class in top_names[0:n]:
 		series = []
-		for t in range( len( samples) - 1):
-			if lock_class["name"] in samples[t]:
-				series.append( samples[t+1][ lock_class["name"]]["holdtime-total"] - 
-					samples[t][ lock_class["name"]]["holdtime-total"])
+		for i in range( len( samples) - 1):
+			if lock_class["name"] in samples[i]:
+				t = ( samples[i+1][ lock_class["name"]][item] - 
+					samples[i][ lock_class["name"]][item]   )
 			else:
-				series.append( 0.0)
+				t = 0.0
 
-		print lock_class["name"]
+			series.append( (i / float( sample_rate), t / 1e4))
+
 		print series
-		all.append( series)
 
-	g.plot( all[0], all[1], all[2], all[3], all[4], all[5], all[6], all[7], all[8], all[9]) #FIXME
+		plots.append( Gnuplot.PlotItems.Data( series, with_="lines", title=lock_class["name"]))
+
+	g.plot( *plots)
 		
+
+
+if __name__ == "__main__":
+	if len( sys.argv) != 2:
+		print "usage: %s test_dir" % sys.argv[0]
+		exit(1)
+
+	# load samples
+	samples = []
+	with open( "%s/samples" % sys.argv[1], 'r') as f:
+		while 1:
+			try: samples.append( pickle.load( f))
+			except: break
+	#plot( samples[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
+	#plot( samples[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
+
+	plot_topn( samples, 2, "holdtime-total", 8, "%s/hold-time-sreies.svg" % sys.argv[1], "Total Hold Time")
+	plot_topn( samples, 2, "waittime-total", 8, "%s/wait-time-sreies.svg" % sys.argv[1], "Total Wait Time")
+
 
