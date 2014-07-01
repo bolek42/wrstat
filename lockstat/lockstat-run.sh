@@ -23,8 +23,9 @@ if [ "$(which $2 2>/dev/null)" = "" ]; then
 	exit 0
 fi
 
-test_dir="$1"
 cmd=${@:2:$#}
+test_dir="$1"
+sample_file="$test_dir/samples"
 
 mkdir -p "$test_dir"
 if [ ! -d "$test_dir" ]; then
@@ -35,8 +36,7 @@ fi
 echo "$cmd" > "$test_dir/cmd"
 
 echo "clearing lockstat"
-sudo "echo 0 > /proc/lock_stat"
-
+sudo su -m -c "echo 0 > /proc/lock_stat"
 
 ##############
 begin_t=`date +%H-%M-%S`
@@ -44,6 +44,9 @@ begin_t=`date +%H-%M-%S`
 #command line
 echo eval $cmd
 eval $cmd $i &> "$test_dir/user_output"
+
+sudo python "$tool_path/lockstat-sampling-deamon.py" "$sample_file"
+sudo chown $USER "$sample_file"
 
 end_t=`date +%H-%M-%S`
 ##############
