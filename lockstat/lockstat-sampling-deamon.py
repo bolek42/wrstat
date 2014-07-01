@@ -41,6 +41,7 @@ def lockstat_parse_lock( row):
 
 	return lock
 
+#TODO parser offloading
 #FIXME DFA with string comparison
 def lockstat_read( filename):
 	file = open( filename, "r")
@@ -50,8 +51,7 @@ def lockstat_read( filename):
 	#remove whitespaces and empty lines
 	rows = map( lambda row: filter(lambda s: s != '', row), raw)
 
-	lock_classes = []
-
+	lock_classes = {}
 	#to track the type of the current row we use a simple DFA
 	state = "lock_class"
 	for row in rows:
@@ -68,7 +68,7 @@ def lockstat_read( filename):
 		elif state == "lock_class":
 			lock_class = lockstat_parse_lock_class( row)
 			if not( lock_class is None):
-				lock_classes.append( lock_class)
+				lock_classes.update( { lock_class["name"] : lock_class})
 		elif state == "read_lock":
 			lock = lockstat_parse_lock( row)
 			if not( lock is None):
@@ -88,6 +88,7 @@ def lockstat_capture():
 	print "sample"
 	# If you want to make file I/O more efficient, reimplement in C
 	pickle.dump( lockstat_read( "/proc/lock_stat"), sample_file)
+	sample_file.flush()
 	sample_file_mutex.release()
 
 def signal_handler(signal, frame):

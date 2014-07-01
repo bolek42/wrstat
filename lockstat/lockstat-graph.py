@@ -7,6 +7,7 @@ import numpy
 import pylab
 import operator
 import pickle
+import Gnuplot, Gnuplot.funcutils
 
 colors = [ 	
 		'#FF0000', '#00FF00', '#0000FF', 
@@ -65,9 +66,9 @@ def  bar_plot_stacked( filename, title, data, labels, discarded):
 def plot( usage, outfile, title, key):
 	labels = []
 	waittime= []
-	for usage in sorted( usage, key=lambda x: x[key]):
-		labels.append( usage["name"])
-		waittime.append( usage[key])
+	for lock_class in sorted( usage, key=lambda x: x[key]):
+		labels.append( lock_class["name"])
+		waittime.append( lock_class[key])
 
 	bar_plot_stacked( outfile, title, waittime, labels, 0)
 
@@ -78,7 +79,45 @@ if __name__ == "__main__":
 
 	samples = []
 	with open( "%s/samples" % sys.argv[1], 'r') as f:
-		samples.append( pickle.load( f))
+		#TODO ugly!
+		while 1:
+			print "sample"
+			try:
+				samples.append( pickle.load( f))
+			except:
+				break
+	#plot( samples[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
+	#plot( samples[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
 
-	plot( samples[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
-	plot( samples[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
+	#plot samples
+	g = Gnuplot.Gnuplot(debug=1)
+	g('set style data lines')
+	g("set terminal svg")
+	g("set output '%s/hold-time-sreies.svg'" % sys.argv[1])
+	g('set multiplot')
+	g("set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
+
+	#determine top n
+	top_names = []
+	for key, value in samples[-1].iteritems():
+		top_names.append( value)
+	top_names = sorted( top_names, key=lambda x: x["holdtime-total"], reverse = True)
+	
+	#actual plot
+	all = []
+	for lock_class in top_names:
+		series = []
+		for t in range( len( samples) - 1):
+			if lock_class["name"] in samples[t]:
+				series.append( samples[t+1][ lock_class["name"]]["holdtime-total"] - 
+					samples[t][ lock_class["name"]]["holdtime-total"])
+			else:
+				series.append( 0.0)
+
+		print lock_class["name"]
+		print series
+		all.append( series)
+
+	g.plot( all[0], all[1], all[2], all[3], all[4], all[5], all[6], all[7], all[8], all[9]) #FIXME
+		
+
