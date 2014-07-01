@@ -159,6 +159,7 @@ def plot( usage, outfile, title, key):
 if __name__ == "__main__":
 	if len( sys.argv) != 2:
 		print "usage: %s test_dir" % sys.argv[0]
+		exit(1)
 
 	usage = read_lockstat_data( "%s/lock_stat" % sys.argv[1])
 
