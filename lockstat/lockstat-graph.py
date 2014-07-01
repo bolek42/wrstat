@@ -63,12 +63,13 @@ def  bar_plot_stacked( filename, title, data, labels, discarded):
 	pylab.savefig( filename, tight_layout=True)
 
 
-def plot( usage, outfile, title, key):
+def plot( usage, outfile, title, item):
 	labels = []
 	waittime= []
-	for lock_class in sorted( usage, key=lambda x: x[key]):
-		labels.append( lock_class["name"])
-		waittime.append( lock_class[key])
+
+	for (class_name, lock_class) in sorted( usage.iteritems(), key=lambda (key, value): value[item]):
+		labels.append( class_name)
+		waittime.append( lock_class[item])
 
 	bar_plot_stacked( outfile, title, waittime, labels, 0)
 
@@ -109,8 +110,6 @@ def plot_topn( samples, sample_rate, item, n, file, title):
 				t = 0.0
 
 			series.append( (i / float( sample_rate), t / 1e4))
-
-		print series
 
 		plots.append( Gnuplot.PlotItems.Data( series, with_="lines", title=lock_class["name"]))
 
