@@ -129,8 +129,8 @@ if __name__ == "__main__":
 		while 1:
 			try: samples.append( pickle.load( f))
 			except: break
-	#plot( samples[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
-	#plot( samples[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
+	plot( samples[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
+	plot( samples[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
 
 	plot_topn( samples, 2, "holdtime-total", 8, "%s/hold-time-sreies.svg" % sys.argv[1], "Total Hold Time")
 	plot_topn( samples, 2, "waittime-total", 8, "%s/wait-time-sreies.svg" % sys.argv[1], "Total Wait Time")
