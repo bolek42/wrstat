@@ -117,8 +117,6 @@ def plot_topn( samples, sample_rate, item, n, file, title):
 
 #term item
 def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
-	g = Gnuplot.Gnuplot( debug=0)
-	g( "set terminal svg")
 
 	#determine top n
 	top_names = []
@@ -150,24 +148,39 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 			else:
 				wt = ct = cb = 0.0
 
-			waittime.append( (j / float( sample_rate), wt / 1e4 * sample_rate))
+			waittime.append( (j / float( sample_rate), wt * sample_rate))
 			contentions.append( (j / float( sample_rate), ct * 100 * sample_rate))
 			con_bounce.append( (j / float( sample_rate), cb * 100 * sample_rate))
 
+		histogram = []
+		#FIXME term read_locks
+		for lock in samples[-1][ class_name]["read-locks"]:
+			data = Gnuplot.PlotItems.Data( [lock["con-bounces"]], title="%s ( read)"
+				% (lock[ "symbol"]))
+			histogram.append( data)
 
-		plots = []
+		for lock in samples[-1][ class_name]["write-locks"]:
+			data = Gnuplot.PlotItems.Data( [lock["con-bounces"]], title="%s ( write)"
+				% (lock[ "symbol"]))
+			histogram.append( data)
+
 
 		#plot
+		g = Gnuplot.Gnuplot( debug=0)
+		g( "reset")
+		g( "set terminal svg")
 		g( "set output '%s/top-%d.svg'" % ( path, i))
-		g( "clear")
 
-		g( "set multiplot layout 2,2 title '%s'" % class_name)
-		g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
+		#g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
+		g( "set multiplot title '%s'" % class_name)
 
 
 		g( "set title 'Waittime'")
+		g( "set ylabel 'wait us/s'")
+		g( "set origin 0,0.45")
+		g( "set size 0.5,0.5")
 		g.plot(Gnuplot.PlotItems.Data( waittime, with_="lines"))
-		g("unset object 1")
+		#g("unset object 1")
 
 		g( "set title 'Contentions - Bounces'")
 		g( "set ylabel '#/s'")
@@ -175,11 +188,26 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 		g( "set key outside")
 		g( "set key bmargin")
 		g( "set key horizontal")
+		g( "set origin 0.5,0.45")
+		g( "set size 0.5,0.5")
 		g.plot(	Gnuplot.PlotItems.Data( con_bounce, with_="lines", title="bounce"),
 			Gnuplot.PlotItems.Data( contentions, with_="lines", title="cont.") )
+#		g.plot(	Gnuplot.PlotItems.Data( waittime_per_bounce, with_="lines"))
 		g( "set key default")
 
-		g( "unset multiplot")
+		#histogram
+		g( "unset xtics")
+		g( "set ylabel 'Bounces Total'")
+		g( "set title 'Bounces - Functions'")
+		g( "set style data histograms")
+		g( "set style histogram rowstacked")
+		g( "set style fill solid border -1")
+		g( "set key invert reverse Left outside")
+		g( "set origin 0,0")
+		g( "set size 1,0.5")
+		g.plot(	*histogram)
+
+		g.close()
 
 if __name__ == "__main__":
 	if len( sys.argv) != 2:

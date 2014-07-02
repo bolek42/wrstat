@@ -72,11 +72,11 @@ def lockstat_read( filename):
 		elif state == "read_lock":
 			lock = lockstat_parse_lock( row)
 			if not( lock is None):
-				lock_class["read_locks"].append( lock)
+				lock_class["read-locks"].append( lock)
 		elif state == "write_lock":
 			lock = lockstat_parse_lock( row)
 			if not( lock is None):
-				lock_class["write_locks"].append( lock)
+				lock_class["write-locks"].append( lock)
 
 	file.close()
 	return lock_classes
