@@ -88,7 +88,7 @@ def plot_topn( samples, sample_rate, item, n, file, title):
 	#g( "set key reverse")
 	g( "set key bmargin")
 	g( "set xlabel 'runtime ( sec)'")
-	g( "set ylabel 'percentage'")
+	g( "set ylabel 'usec/s'")
 
 	#determine top n
 	top_names = []
@@ -109,7 +109,7 @@ def plot_topn( samples, sample_rate, item, n, file, title):
 			else:
 				t = 0.0
 
-			series.append( (i / float( sample_rate), t / 1e4))
+			series.append( (i / float( sample_rate), t))
 
 		plots.append( Gnuplot.PlotItems.Data( series, with_="lines", title=lock_class["name"]))
 
@@ -135,32 +135,36 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 		waittime = []
 		contentions = []
 		con_bounce = []
+		acquisitions = []
 		for j in range( len( samples) - 1):
 			if class_name in samples[j]:
 				wt = ( samples[j+1][ class_name]["waittime-total"] - 
 					samples[j][ class_name]["waittime-total"]   )
 
+				aq = ( samples[j+1][ class_name]["acquisitions"] - 
+					samples[j][ class_name]["acquisitions"]   )
 				ct = ( samples[j+1][ class_name]["contentions"] - 
 					samples[j][ class_name]["contentions"]   )
 				cb = ( samples[j+1][ class_name]["con-bounces"] - 
 					samples[j][ class_name]["con-bounces"]   )
 
 			else:
-				wt = ct = cb = 0.0
+				wt = aq = ct = cb = 0.0
 
 			waittime.append( (j / float( sample_rate), wt * sample_rate))
-			contentions.append( (j / float( sample_rate), ct * 100 * sample_rate))
-			con_bounce.append( (j / float( sample_rate), cb * 100 * sample_rate))
+			acquisitions.append( (j / float( sample_rate), aq * sample_rate))
+			contentions.append( (j / float( sample_rate), ct * sample_rate))
+			con_bounce.append( (j / float( sample_rate), cb * sample_rate))
 
 		histogram = []
 		#FIXME term read_locks
 		for lock in samples[-1][ class_name]["read-locks"]:
-			data = Gnuplot.PlotItems.Data( [lock["con-bounces"]], title="%s ( read)"
+			data = Gnuplot.PlotItems.Data( [lock["con-bounces"]], title="%s ( write)"
 				% (lock[ "symbol"]))
 			histogram.append( data)
 
 		for lock in samples[-1][ class_name]["write-locks"]:
-			data = Gnuplot.PlotItems.Data( [lock["con-bounces"]], title="%s ( write)"
+			data = Gnuplot.PlotItems.Data( [lock["con-bounces"]], title="%s ( read)"
 				% (lock[ "symbol"]))
 			histogram.append( data)
 
@@ -182,17 +186,19 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 		g.plot(Gnuplot.PlotItems.Data( waittime, with_="lines"))
 		#g("unset object 1")
 
-		g( "set title 'Contentions - Bounces'")
+		g( "set title 'Acquisitions - Contentions'")
 		g( "set ylabel '#/s'")
 		g( "set key bottom right")
+		g( "set logscale y")
 		g( "set key outside")
 		g( "set key bmargin")
 		g( "set key horizontal")
 		g( "set origin 0.5,0.45")
 		g( "set size 0.5,0.5")
-		g.plot(	Gnuplot.PlotItems.Data( con_bounce, with_="lines", title="bounce"),
+		g.plot(	Gnuplot.PlotItems.Data( acquisitions, with_="lines", title="acqu."),
 			Gnuplot.PlotItems.Data( contentions, with_="lines", title="cont.") )
 #		g.plot(	Gnuplot.PlotItems.Data( waittime_per_bounce, with_="lines"))
+		g( "unset logscale y")
 		g( "set key default")
 
 		#histogram
@@ -223,7 +229,7 @@ if __name__ == "__main__":
 	plot( samples[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
 	plot( samples[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
 
-	plot_topn( samples, 2, "holdtime-total", 8, "%s/hold-time-sreies.svg" % sys.argv[1], "Total Hold Time")
+	plot_topn( samples, 2, "waittime-total", 8, "%s/wait-time-sreies.svg" % sys.argv[1], "Wait Time")
 	plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
 
 

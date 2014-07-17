@@ -38,7 +38,10 @@ echo "$cmd" > "$test_dir/cmd"
 echo "clearing lockstat"
 sudo su -m -c "echo 0 > /proc/lock_stat"
 
-sudo python "$tool_path/lockstat-sampling-deamon.py" "$sample_file"&
+PROCFILES="/proc/lock_stat /proc/stat /proc/diskstats"
+mkdir "$test_dir/samples"
+rm -f "$test_dir/samples/*"
+sudo python "$tool_path/lockstat-sampling-deamon.py" "$test_dir/samples" $PROCFILES&
 sampling_deamon_pid=$!
 
 ##############
