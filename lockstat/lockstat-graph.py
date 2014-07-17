@@ -222,14 +222,16 @@ if __name__ == "__main__":
 
 	# load samples
 	samples = []
-	with open( "%s/samples" % sys.argv[1], 'r') as f:
-		while 1:
-			try: samples.append( pickle.load( f))
-			except: break
-	plot( samples[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
-	plot( samples[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
+	f = open( "%s/samples.pickle" % sys.argv[1], 'r')
 
-	plot_topn( samples, 2, "waittime-total", 8, "%s/wait-time-sreies.svg" % sys.argv[1], "Wait Time")
-	plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
+	samples = pickle.load( f)
+
+	lock_stat = samples[ "lock_stat"]
+
+	plot( lock_stat[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
+	plot( lock_stat[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
+
+	plot_topn( lock_stat, 2, "waittime-total", 8, "%s/wait-time-sreies.svg" % sys.argv[1], "Wait Time")
+	plot_topn_detailed( lock_stat, 2, "waittime-total", 8, sys.argv[1])
 
 
