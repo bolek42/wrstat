@@ -81,13 +81,61 @@ def lockstat_read( filename):
 	file.close()
 	return lock_classes
 
+######## out of state change ########
+def stat_unit( u):
+	return int( u)
+
+def stat_cpurow( row):
+	cpu = {}
+	name = row[0]
+	cpu[ "user"] = int( row[1]) if len( row[1]) < 1 else None
+	cpu[ "nice"] = int( row[2]) if len( row[2]) < 2 else None
+	cpu[ "system"] = int( row[3]) if len( row[3]) < 3 else None
+	cpu[ "idle"] = int( row[4]) if len( row[4]) < 4 else None
+	cpu[ "iowait"] = int( row[5]) if len( row[5]) < 5 else None
+	cpu[ "irq"] = int( row[6]) if len( row[6]) < 6 else None
+	cpu[ "softirq"] = int( row[7]) if len( row[7]) < 7 else None
+	cpu[ "steal"] = int( row[8]) if len( row[8]) < 8 else None
+	cpu[ "guest"] = int( row[9]) if len( row[9]) < 9 else None
+	cpu[ "guest_nice"] = int( row[10]) if len( row[10]) < 10 else None
+
+	return name, cpu
+	
+def stat_read( filename):
+	file = open( filename, "r")
+
+	raw = list( csv.reader( file, delimiter=' '))
+	rows = map( lambda row: filter(lambda s: s != '', row), raw)
+
+	stat = {}
+
+	n_cpu = -1
+	for row in rows:
+		if row[0][0:3] == "cpu":
+			name, cpu = stat_cpurow( row)
+			stat[ name] = cpu
+			n_cpu += 1
+		elif len( row) == 2:
+			stat[ row[ 0]] = stat_unit( row[1])
+		# FIXME add missing
+
+	stat["n_cpu"] = n_cpu
+	return stat
+
+######## /out of state change ########
+
 def lockstat_capture():
 	sample_file_mutex.acquire()
 	threading.Timer(0.5, lockstat_capture).start();
 
 	print "sample"
 	# If you want to make file I/O more efficient, reimplement in C
-	pickle.dump( lockstat_read( "/proc/lock_stat"), sample_file)
+	sample = {}
+	#FIXME dirty!
+	#sample[ "lock_stat"] = lockstat_read( "/proc/lock_stat")
+	sample[ "stat"] = stat_read( "/proc/stat")
+
+	pickle.dump( sample, sample_file)
 	sample_file.flush()
 	sample_file_mutex.release()
 
