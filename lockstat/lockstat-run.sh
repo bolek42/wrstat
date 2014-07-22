@@ -25,7 +25,6 @@ fi
 
 cmd=${@:2:$#}
 test_dir="$1"
-sample_file="$test_dir/samples"
 
 mkdir -p "$test_dir"
 if [ ! -d "$test_dir" ]; then
@@ -38,7 +37,11 @@ echo "$cmd" > "$test_dir/cmd"
 echo "clearing lockstat"
 sudo su -m -c "echo 0 > /proc/lock_stat"
 
-sudo python "$tool_path/lockstat-sampling-deamon.py" "$sample_file"&
+procfiles="/proc/stat /proc/lockstat /proc/diskstats "
+sample_dir="$test_dir/samples"
+mkdir "$sample_dir"
+rm "$sample_dir/*"
+sudo python "$tool_path/lockstat-sampling-deamon.py" "$sample_dir" $procfiles&
 sampling_deamon_pid=$!
 
 ##############
@@ -48,7 +51,7 @@ begin_t=`date +%H-%M-%S`
 echo eval $cmd
 eval $cmd $i &> "$test_dir/user_output"
 
-sudo chown $USER "$sample_file"
+sudo chown $USER "$sample_file" #FIXME
 
 end_t=`date +%H-%M-%S`
 ##############
