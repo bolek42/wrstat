@@ -1,10 +1,5 @@
 #!/usr/bin/python
-import os
 import sys
-import csv
-import numpy
-import operator
-import pickle
 import signal
 import threading
 import shutil

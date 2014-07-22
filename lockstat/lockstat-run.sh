@@ -39,8 +39,8 @@ sudo su -m -c "echo 0 > /proc/lock_stat"
 
 procfiles="/proc/stat /proc/lockstat /proc/diskstats "
 sample_dir="$test_dir/samples"
-mkdir "$sample_dir"
-rm "$sample_dir/*"
+mkdir -p "$sample_dir"
+rm -f "$sample_dir"/*
 sudo python "$tool_path/lockstat-sampling-deamon.py" "$sample_dir" $procfiles&
 sampling_deamon_pid=$!
 
@@ -51,7 +51,9 @@ begin_t=`date +%H-%M-%S`
 echo eval $cmd
 eval $cmd $i &> "$test_dir/user_output"
 
-sudo chown $USER "$sample_file" #FIXME
+user=$USER
+sudo chown $user "$sample_dir"/*
+chmod 660 "$sample_dir"/*
 
 end_t=`date +%H-%M-%S`
 ##############
