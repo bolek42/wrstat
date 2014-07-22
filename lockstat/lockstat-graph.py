@@ -4,7 +4,7 @@ import os
 import sys
 import csv
 import numpy
-import pylab
+#import pylab
 import operator
 import pickle
 import Gnuplot, Gnuplot.funcutils
@@ -17,6 +17,7 @@ colors = [
 		'#0088FF', '#FF8800', '#88FF00',
 		'#00FF88', '#88FF00', '#FF8800']
 
+"""
 def  bar_plot_stacked( filename, title, data, labels, discarded):
 	#convert data to range [0..yrange]
 	max_entries = 16
@@ -72,6 +73,7 @@ def plot( usage, outfile, title, item):
 		waittime.append( lock_class[item])
 
 	bar_plot_stacked( outfile, title, waittime, labels, 0)
+"""
 
 #term item
 def plot_topn( samples, sample_rate, item, n, file, title):
@@ -209,6 +211,36 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 
 		g.close()
 
+def plot_histogram( data, filename):
+
+	histogram = []
+	for key, value in data.iteritems():
+		pl = Gnuplot.PlotItems.Data( value, title=str( key))
+		histogram.append( pl)
+
+	#histogram
+	g = Gnuplot.Gnuplot( debug=0)
+	g( "reset")
+	g( "set terminal svg")
+	g( "set output '%s'" % filename)
+
+	g( "unset xtics")
+	g( "set ylabel 'Bounces Total'")
+	g( "set title 'Bounces - Functions'")
+	g( "set style data histograms")
+	g( "set style histogram rowstacked")
+	g( "set style fill solid border -1")
+	g( "set key invert reverse Left outside")
+	g.plot(	*histogram)
+
+	g.close()
+
+def plot_stat( testdir, stat):
+
+	data = { "foo" : [1,2,3,4,2], "bar" : [4,3,4,2,1]}
+
+	plot_histogram( data, "/tmp/foo.svg")
+
 if __name__ == "__main__":
 	if len( sys.argv) != 2:
 		print "usage: %s test_dir" % sys.argv[0]
@@ -216,14 +248,13 @@ if __name__ == "__main__":
 
 	# load samples
 	samples = []
-	with open( "%s/samples" % sys.argv[1], 'r') as f:
-		while 1:
-			try: samples.append( pickle.load( f))
-			except: break
-	plot( samples[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
-	plot( samples[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
+	f = open( "%s/samples" % sys.argv[1], 'r')
+	samples = pickle.load( f)
 
-	plot_topn( samples, 2, "holdtime-total", 8, "%s/hold-time-sreies.svg" % sys.argv[1], "Total Hold Time")
-	plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
+	#plot( samples[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
+	#plot( samples[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
 
+	#plot_topn( samples, 2, "holdtime-total", 8, "%s/hold-time-sreies.svg" % sys.argv[1], "Total Hold Time")
+	#plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
 
+	plot_stat( sys.argv[1], samples["stat"])
