@@ -12,32 +12,31 @@ def lockstat_parse_lock_class( row):
 
 	lockname = " ".join( row[ 0 : len( row) - 11 + 1])[0:-1]
 	data = row[ len( row) - 11 + 1 ::]
-	usage = {"name" : lockname,
-		"read-locks" : [],
-		"write-locks" : [],
-		"con-bounces" : int( data[0]),
-		"contentions" : int( data[1]),
-		"waittime-min" : float( data[2]),
-		"waittime-max" : float( data[3]),
-		"waittime-total" : float( data[4]),
-		"acq-bounces" : int( data[5]),
-		"acquisitions" : int( data[6]),
-		"holdtime-min" : float( data[7]),
-		"holdtime-max" : float( data[8]),
-		"holdtime-total" : float( data[9])
-		}
+	usage = {}
+	usage[ "name"] = lockname,
+	usage[ "read-locks"] = []
+	usage[ "write-locks"] = []
+	usage[ "con-bounces"] = int( data[0])
+	usage[ "contentions"] = int( data[1])
+	usage[ "waittime-min"] = float( data[2])
+	usage[ "waittime-max"] = float( data[3])
+	usage[ "waittime-total"] = float( data[4])
+	usage[ "acq-bounces"] = int( data[5])
+	usage[ "acquisitions"] = int( data[6])
+	usage[ "holdtime-min"] = float( data[7])
+	usage[ "holdtime-max"] = float( data[8])
+	usage[ "holdtime-total"] = float( data[9])
 		
 	return usage
 
 def lockstat_parse_lock( row):
-	lock = { "con-bounces" : int( row[1]),
-		"addr" : row[2],
-		"symbol" : row[3]}
+	lock = {}
+	lock[ "con-bounces"] = int( row[1])
+	lock[ "addr"] = row[2]
+	lock[ "symbol"] = row[3]
 
 	return lock
 
-#TODO parser offloading
-#FIXME DFA with string comparison
 def lockstat_read( filename):
 	file = open( filename, "r")
 
@@ -88,20 +87,20 @@ def diskstats_read( filename):
 	state = "lock_class"
 	for row in rows:
 		device = {}
-		device[ "major_number"] = int( row[ 0])
-		device[ "minor_number"] = int( row[ 1])
-		device[ "device_name"] = row[ 2]
-		device[ "reads_completed"] = int( row[ 3])
-		device[ "reads_merger"] = int( row[ 4])
-		device[ "sectors_read"] = int( row[ 5])
-		device[ "time_reading"] = int( row[ 6])
-		device[ "writes_completed"] = int( row[ 7])
-		device[ "writes_merger"] = int( row[ 8])
-		device[ "sectors_written"] = int( row[ 9])
-		device[ "time_write"] = int( row[ 10])
-		device[ "in_progress"] = int( row[ 11])
-		device[ "time_io"] = int( row[ 12])
-		device[ "time_io_weighted"] = int( row[ 12])
+		device[ "major-number"] = int( row[ 0])
+		device[ "minor-number"] = int( row[ 1])
+		device[ "device-name"] = row[ 2]
+		device[ "reads-completed"] = int( row[ 3])
+		device[ "reads-merger"] = int( row[ 4])
+		device[ "sectors-read"] = int( row[ 5])
+		device[ "time-reading"] = int( row[ 6])
+		device[ "writes-completed"] = int( row[ 7])
+		device[ "writes-merger"] = int( row[ 8])
+		device[ "sectors-written"] = int( row[ 9])
+		device[ "time-write"] = int( row[ 10])
+		device[ "in-progress"] = int( row[ 11])
+		device[ "time-io"] = int( row[ 12])
+		device[ "time-io-weighted"] = int( row[ 12])
 		devices[ row[2]] = {}
 	file.close()
 
