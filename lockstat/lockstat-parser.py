@@ -155,6 +155,45 @@ def stat_read( filename):
 	stat["n_cpu"] = n_cpu
 	return stat
 
+############## oprofile ##############
+def read_oprofile( filename):
+	file = open( filename, "r")
+	reader = csv.reader( file, delimiter=' ')
+	rows = []
+	n_cpu = -1
+	for line in reader:
+		data = []
+
+		#strip whitespaces
+		for element in line:
+			if element != '':
+				data.append( element)
+		if n_cpu == -1:
+			n_cpu = (len ( data) / 2) - 1
+
+		#process fields
+		row = dict()
+		i = 0
+		samples_agregate = 0.0
+		runtime_agregate = 0.0
+		for cpu in range( n_cpu):
+			sample = int( data[cpu * 2])
+			runtime = float( data[(cpu * 2) + 1])
+			row[ "samples_cpu%d" % cpu] = sample
+			row[ "runtime_cpu%d" % cpu] = runtime
+			samples_agregate += sample
+			runtime_agregate += runtime		
+
+		row[ "samples_agregate"] = samples_agregate
+		row[ "runtime_agregate"] = runtime_agregate
+		row[ "app_name"] = data[ 2 * n_cpu]
+		row[ "symbol_name"] = data[ 2 * n_cpu + 1]
+		row[ "n_cpu"] = n_cpu
+
+		rows.append( row)
+	return rows #returns n_cpu and data
+
+
 ## actual main ##
 if __name__ == "__main__":
 	if len( sys.argv) != 3:
@@ -192,7 +231,10 @@ if __name__ == "__main__":
 
 		t += 1
 	#end of ugly
-
+	if "oprofile" in files:
+		samples[ "oprofile"] = read_oprofile( "%s/oprofile" % sample_path)
+	
+	print samples
 	f = open( sample_file, "w")
 	pickle.dump( samples, f)
 	f.close()
