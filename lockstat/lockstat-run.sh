@@ -37,18 +37,11 @@ echo "$cmd" > "$test_dir/cmd"
 echo "clearing lockstat"
 sudo su -m -c "echo 0 > /proc/lock_stat"
 
-<<<<<<< HEAD
-PROCFILES="/proc/lock_stat /proc/stat /proc/diskstats"
-mkdir "$test_dir/samples"
-rm -f "$test_dir/samples/*"
-sudo python "$tool_path/lockstat-sampling-deamon.py" "$test_dir/samples" $PROCFILES&
-=======
-procfiles="/proc/stat /proc/lockstat /proc/diskstats "
+procfiles="/proc/stat /proc/lock_stat /proc/diskstats "
 sample_dir="$test_dir/samples"
 mkdir -p "$sample_dir"
 rm -f "$sample_dir"/*
 sudo python "$tool_path/lockstat-sampling-deamon.py" "$sample_dir" $procfiles&
->>>>>>> dbaec1f9184170c0fb27fc0be9801d629466e5c4
 sampling_deamon_pid=$!
 
 ##############
@@ -67,7 +60,6 @@ wait $sampling_deamon_pid
 
 user=$USER
 sudo chown $user "$sample_dir"/*
-chmod 660 "$sample_dir"/*
 
 sudo cat /proc/lock_stat > "$test_dir/lock_stat"
 

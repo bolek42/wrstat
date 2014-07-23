@@ -3,9 +3,10 @@ import sys
 import signal
 import threading
 import shutil
+import os
 
 files = []
-sample_path = ""
+path = ""
 i = 0
 
 def capture():
@@ -17,7 +18,7 @@ def capture():
 			shutil.copy( src, dest)
 			os.chmod( dest, 0b000000110) # rwxrwxrwx = 000000110
 		except:
-			print "failed copy %s" % f
+			print "failed copy %s" % src
 
 	i += 1
 
@@ -32,7 +33,7 @@ if __name__ == "__main__":
 		print "usage: %s samplepath procfile1 procfile2 ..." % sys.argv[0]
 		exit(1)
 
-	sample_path = sys.argv[1]
+	path = sys.argv[1]
 	for src in sys.argv[2:]:
 		files.append( src)
 
