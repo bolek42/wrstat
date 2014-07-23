@@ -46,7 +46,6 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 	all = []
 	for i in range( n):
 		class_name = top_names[i]["name"]
-		print class_name
 
 		#calculating curves
 		waittime = []
@@ -217,7 +216,6 @@ def plot_lock_stat( testdir, samples):
 
 			series.append( (i / float( sample_rate), t))
 
-		print lock_class
 		data[ lock_class["name"]] = series
 
 	cmds = [	"set key outside",
@@ -229,7 +227,7 @@ def plot_lock_stat( testdir, samples):
 			"set ylabel 'usec/s'"]
 
 	plot_series( data, "%s/lockstat_waittime_top.svg" % testdir, cmds)
-	#plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
+	plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
 
 def plot_stat( testdir, stat):
 	#aggregate sampled
