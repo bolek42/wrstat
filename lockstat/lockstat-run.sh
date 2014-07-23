@@ -51,15 +51,18 @@ begin_t=`date +%H-%M-%S`
 echo eval $cmd
 eval $cmd $i &> "$test_dir/user_output"
 
+end_t=`date +%H-%M-%S`
+##############
+
+echo "killing sampling deamon..."
+sudo kill -SIGTERM $sampling_deamon_pid
+wait $sampling_deamon_pid
+
 user=$USER
 sudo chown $user "$sample_dir"/*
 chmod 660 "$sample_dir"/*
 
-end_t=`date +%H-%M-%S`
-##############
-
-sudo kill -SIGTERM $sampling_deamon_pid
-
 sudo cat /proc/lock_stat > "$test_dir/lock_stat"
 
+python "$tool_path/lockstat-parser.py" "$sample_dir" "$test_dir/samples.pickle"&
 python "$tool_path/lockstat-graph.py" "$test_dir"

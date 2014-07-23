@@ -211,7 +211,7 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 
 		g.close()
 
-def plot_histogram( data, filename):
+def plot_histogram( data, filename, title):
 
 	histogram = []
 	for key, value in data.iteritems():
@@ -224,9 +224,9 @@ def plot_histogram( data, filename):
 	g( "set terminal svg")
 	g( "set output '%s'" % filename)
 
-	g( "unset xtics")
-	g( "set ylabel 'Bounces Total'")
-	g( "set title 'Bounces - Functions'")
+	g( "set yrange [0:100]")
+	g( "set ylabel 'Runtime Percentage'")
+	g( "set title '%s'" % title)
 	g( "set style data histograms")
 	g( "set style histogram rowstacked")
 	g( "set style fill solid border -1")
@@ -236,10 +236,40 @@ def plot_histogram( data, filename):
 	g.close()
 
 def plot_stat( testdir, stat):
+	#aggregate sampled
+	data = { "user" : [], "nice" : [], "system" : [], "idle" : []}
 
-	data = { "foo" : [1,2,3,4,2], "bar" : [4,3,4,2,1]}
+	for t in range( len( stat) - 1):
+		user = stat[t + 1]["cpu"]["user"] - stat[t]["cpu"]["user"]
+		nice = stat[t + 1]["cpu"]["nice"] - stat[t]["cpu"]["nice"]
+		system = stat[t + 1]["cpu"]["system"] - stat[t]["cpu"]["system"]
+		idle = stat[t + 1]["cpu"]["idle"] - stat[t]["cpu"]["idle"]
 
-	plot_histogram( data, "/tmp/foo.svg")
+		#normalize
+		total = float( user + nice + system + idle)
+		data[ "user"].append( user / total * 100)
+		data[ "nice"].append( nice / total * 100)
+		data[ "system"].append( system / total * 100)
+		data[ "idle"].append( idle / total * 100)
+
+	plot_histogram( data, "%s/stat_aggreagted_sampled.svg" % testdir, "stat aggreagted sampled")
+
+	#per cpu
+	data = { "user" : [], "nice" : [], "system" : [], "idle" : []}
+	for cpu in range( stat[0]["n_cpu"]):
+		user = stat[-1]["cpu%d" % cpu]["user"] - stat[0]["cpu%d" % cpu]["user"]
+		nice = stat[-1]["cpu%d" % cpu]["nice"] - stat[0]["cpu%d" % cpu]["nice"]
+		system = stat[-1]["cpu%d" % cpu]["system"] - stat[0]["cpu%d" % cpu]["system"]
+		idle = stat[-1]["cpu%d" % cpu]["idle"] - stat[0]["cpu%d" % cpu]["idle"]
+
+		#normalize
+		total = float( user + nice + system + idle)
+		data[ "user"].append( user / total * 100)
+		data[ "nice"].append( nice / total * 100)
+		data[ "system"].append( system / total * 100)
+		data[ "idle"].append( idle / total * 100)
+
+	plot_histogram( data, "%s/stat_percpu.svg" % testdir, "stat per cpu")
 
 if __name__ == "__main__":
 	if len( sys.argv) != 2:
@@ -248,7 +278,7 @@ if __name__ == "__main__":
 
 	# load samples
 	samples = []
-	f = open( "%s/samples" % sys.argv[1], 'r')
+	f = open( "%s/samples.pickle" % sys.argv[1], 'r')
 	samples = pickle.load( f)
 
 	#plot( samples[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
