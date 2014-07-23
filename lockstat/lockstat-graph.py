@@ -9,6 +9,7 @@ import operator
 import pickle
 import Gnuplot, Gnuplot.funcutils
 
+sample_rate = 2
 colors = [ 	
 		'#FF0000', '#00FF00', '#0000FF', 
 		'#00FFFF', '#FF00FF', '#FFFF00', 
@@ -17,90 +18,18 @@ colors = [
 		'#0088FF', '#FF8800', '#88FF00',
 		'#00FF88', '#88FF00', '#FF8800']
 
-def  bar_plot_stacked( filename, title, data, labels, discarded):
-	#convert data to range [0..yrange]
-	max_entries = 16
-	data = numpy.array( data)
-	sum_all = data.sum( axis=0) + discarded
-	data /= sum_all * ( 1 / 100.0)
-
-	#actual ploting
-	fig = pylab.figure()
-	fig.clf()
-	ax = pylab.subplot(111)
-	ax.set_title( title)
-
-	#plot others
-	i = 0
-	bottom = 0
-	while i < len( data) - max_entries + 1 and i < len( data):
-	#while ( i < len( data) - max_entries + 1 or data[i] < 0.5) and i < len( data):
-		bottom += data[i]
-		i += 1
-	label = "(%2.2f%%) others" % bottom
-	pylab.bar( 0, bottom, 1, color="#ffffff", label=label)
-
-	#plot actual data
-	while i < len( data):
-		label = "(%2.2f%%) %s" % ( data[i], labels[i])
-		pylab.bar( 0, data[i], 1, color=colors[i % len( colors)], bottom = bottom, label=label)
-		bottom += data[i]
-		i += 1
-
-	#resize graph in x direction
-	box = ax.get_position()
-	ax.set_position([box.x0, box.y0, box.width * 0.3, box.height])
-
-	#show labels in descending order
-	handles, labels = ax.get_legend_handles_labels()
-	ax.legend(handles[::-1], labels[::-1], loc='lower left', bbox_to_anchor=(1, 0))
-
-	#disable xticks
-	ax.get_xaxis().set_ticks([])
-	ax.set_ylim([0, (sum_all - discarded) / sum_all * 100])
-
-	#save file
-	pylab.savefig( filename, tight_layout=True)
-
 #term item
-def plot_topn( samples, sample_rate, item, n, file, title):
-	g = Gnuplot.Gnuplot( debug=0)
+def plot_series( data, file, cmds, g = Gnuplot.Gnuplot( debug=0)):
 	g( "set terminal svg")
 	g( "set output '%s'" % file)
 	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 
-	g( "set title '%s'" % title)
-	g( "set key outside")
-	#g( "set key right top")
-	g( "set key bottom right")
-	g( "set key horizontal")
-	#g( "set key reverse")
-	g( "set key bmargin")
-	g( "set xlabel 'runtime ( sec)'")
-	g( "set ylabel 'usec/s'")
+	for cmd in cmds:
+		g( cmd)
 
-	#determine top n
-	top_names = []
-	for key, value in samples[-1].iteritems():
-		top_names.append( value)
-
-	top_names = sorted( top_names, key=lambda x: x[item], reverse = True)
-	
-	#actual plot
-	all = []
 	plots = []
-	for lock_class in top_names[0:n]:
-		series = []
-		for i in range( len( samples) - 1):
-			if lock_class["name"] in samples[i]:
-				t = ( samples[i+1][ lock_class["name"]][item] - 
-					samples[i][ lock_class["name"]][item]   )
-			else:
-				t = 0.0
-
-			series.append( (i / float( sample_rate), t))
-
-		plots.append( Gnuplot.PlotItems.Data( series, with_="lines", title=lock_class["name"]))
+	for name, series in data.iteritems():
+		plots.append( Gnuplot.PlotItems.Data( series, with_="lines", title=str(name)))
 
 	g.plot( *plots)
 
@@ -214,7 +143,7 @@ def plot_histogram( data, filename, title):
 	g( "reset")
 	g( "set terminal svg")
 	g( "set output '%s'" % filename)
-
+	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 	g( "set yrange [0:100]")
 	g( "set ylabel 'Runtime Percentage'")
 	g( "set title '%s'" % title)
@@ -233,17 +162,18 @@ def plot_histogram_percentage( data, filename, title, discarded):
 	for key, value in data.iteritems():
 		sigma += value
 
-	for key, value in sorted( data.iteritems(), key=lambda (key, value): value[item]):
-		percentage = value * 100 / sigma
+	for key, value in sorted( data.iteritems(), key=lambda (key, value): value, reverse=True)[0:16]:
+		percentage = value * 100.0 / sigma
 		pl = Gnuplot.PlotItems.Data( [ percentage], title=("%s (%.2f%%)" % (str( key), percentage)))
 		histogram.append( pl)
+	histogram.reverse()
 
 	#histogram
 	g = Gnuplot.Gnuplot( debug=0)
 	g( "reset")
 	g( "set terminal svg")
 	g( "set output '%s'" % filename)
-
+	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 	g( "set yrange [0:100]")
 	g( "set ylabel 'Runtime Percentage'")
 	g( "set title '%s'" % title)
@@ -255,25 +185,51 @@ def plot_histogram_percentage( data, filename, title, discarded):
 
 	g.close()
 
-def plot( usage, outfile, title, item):
-	#labels = []
-	#waittime= []
+def plot_lock_stat( testdir, samples):
+	data = {}
+	for (class_name, lock_class) in samples[-1].iteritems():
+		data[ class_name] = lock_class[ "waittime-total"]
+	plot_histogram_percentage( data, "%s/lockstat_waititme.svg" % testdir, "Waittime Total", 0)
 
 	data = {}
-	#for (class_name, lock_class) in sorted( usage.iteritems(), key=lambda (key, value): value[item]):
-		
-		#labels.append( class_name)
-		#waittime.append( lock_class[item])
+	for (class_name, lock_class) in samples[-1].iteritems():
+		data[ class_name] = lock_class[ "holdtime-total"]
+	plot_histogram_percentage( data, "%s/lockstat_holdtime.svg" % testdir, "Waittime Total", 0)
 
-	#bar_plot_stacked( outfile, title, waittime, labels, 0)
+	#plot_topn( samples, 2, "holdtime-total", 8, "%s/hold-time-sreies.svg" % sys.argv[1], "Total Hold Time")
+	#determine top n
+	top_names = []
+	for key, value in samples[-1].iteritems():
+		top_names.append( value)
 
-def plot_lock_stat( testdir, samples):
-	plot_histogram_percentage( samples[-1]["waittime-total"], "%s/lockstat_waititme_total", "Waittime Total", 0)
-	#plot( samples[-1], "%s/waittime.svg" % testdir, "waittime total", "waittime-total")
-	#plot( samples[-1], "%s/holdtime.svg" % testdir, "holdtime total", "holdtime-total")
+	top_names = sorted( top_names, key=lambda x: x["waittime-total"], reverse = True)
+	
+	#actual plot
+	data = {}
+	for lock_class in top_names[0:8]:
+		series = []
+		for i in range( len( samples) - 1):
+			if lock_class["name"] in samples[i]:
+				t = ( samples[i+1][ lock_class["name"]]["waittime-total"] - 
+					samples[i][ lock_class["name"]]["waittime-total"]   )
+			else:
+				t = 0.0
 
-	plot_topn( samples, 2, "holdtime-total", 8, "%s/hold-time-sreies.svg" % sys.argv[1], "Total Hold Time")
-	plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
+			series.append( (i / float( sample_rate), t))
+
+		print lock_class
+		data[ lock_class["name"]] = series
+
+	cmds = [	"set key outside",
+			"set title 'Waittime Top'",
+			"set key bottom right",
+			"set key horizontal",
+			"set key bmargin",
+			"set xlabel 'runtime ( sec)'",
+			"set ylabel 'usec/s'"]
+
+	plot_series( data, "%s/lockstat_waittime_top.svg" % testdir, cmds)
+	#plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
 
 def plot_stat( testdir, stat):
 	#aggregate sampled
@@ -317,23 +273,8 @@ if __name__ == "__main__":
 		exit(1)
 
 	# load samples
-	samples = []
 	f = open( "%s/samples.pickle" % sys.argv[1], 'r')
-<<<<<<< HEAD
-
 	samples = pickle.load( f)
-
-	lock_stat = samples[ "lock_stat"]
-
-	plot( lock_stat[-1], "%s/waittime.svg" % sys.argv[1], "waittime total", "waittime-total")
-	plot( lock_stat[-1], "%s/holdtime.svg" % sys.argv[1], "holdtime total", "holdtime-total")
-
-	plot_topn( lock_stat, 2, "waittime-total", 8, "%s/wait-time-sreies.svg" % sys.argv[1], "Wait Time")
-	plot_topn_detailed( lock_stat, 2, "waittime-total", 8, sys.argv[1])
-
-=======
-	samples = pickle.load( f)
->>>>>>> dbaec1f9184170c0fb27fc0be9801d629466e5c4
 
 	plot_lock_stat( sys.argv[1], samples["lock_stat"])
 	plot_stat( sys.argv[1], samples["stat"])

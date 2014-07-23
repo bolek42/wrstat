@@ -45,7 +45,7 @@ def lockstat_parse_lock_class( row):
 	lockname = " ".join( row[ 0 : len( row) - 11 + 1])[0:-1]
 	data = row[ len( row) - 11 + 1 ::]
 	usage = {}
-	usage[ "name"] = lockname,
+	usage[ "name"] = lockname
 	usage[ "read-locks"] = []
 	usage[ "write-locks"] = []
 	usage[ "con-bounces"] = int( data[0])
