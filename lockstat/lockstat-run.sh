@@ -25,7 +25,6 @@ fi
 
 cmd=${@:2:$#}
 test_dir="$1"
-sample_file="$test_dir/samples"
 
 mkdir -p "$test_dir"
 if [ ! -d "$test_dir" ]; then
@@ -38,10 +37,18 @@ echo "$cmd" > "$test_dir/cmd"
 echo "clearing lockstat"
 sudo su -m -c "echo 0 > /proc/lock_stat"
 
+<<<<<<< HEAD
 PROCFILES="/proc/lock_stat /proc/stat /proc/diskstats"
 mkdir "$test_dir/samples"
 rm -f "$test_dir/samples/*"
 sudo python "$tool_path/lockstat-sampling-deamon.py" "$test_dir/samples" $PROCFILES&
+=======
+procfiles="/proc/stat /proc/lockstat /proc/diskstats "
+sample_dir="$test_dir/samples"
+mkdir -p "$sample_dir"
+rm -f "$sample_dir"/*
+sudo python "$tool_path/lockstat-sampling-deamon.py" "$sample_dir" $procfiles&
+>>>>>>> dbaec1f9184170c0fb27fc0be9801d629466e5c4
 sampling_deamon_pid=$!
 
 ##############
@@ -51,13 +58,18 @@ begin_t=`date +%H-%M-%S`
 echo eval $cmd
 eval $cmd $i &> "$test_dir/user_output"
 
-sudo chown $USER "$sample_file"
-
 end_t=`date +%H-%M-%S`
 ##############
 
+echo "killing sampling deamon..."
 sudo kill -SIGTERM $sampling_deamon_pid
+wait $sampling_deamon_pid
+
+user=$USER
+sudo chown $user "$sample_dir"/*
+chmod 660 "$sample_dir"/*
 
 sudo cat /proc/lock_stat > "$test_dir/lock_stat"
 
+python "$tool_path/lockstat-parser.py" "$sample_dir" "$test_dir/samples.pickle"&
 python "$tool_path/lockstat-graph.py" "$test_dir"
