@@ -59,9 +59,11 @@ sudo kill -SIGTERM $sampling_deamon_pid
 wait $sampling_deamon_pid
 
 user=$USER
-sudo chown $user "$sample_dir"/*
+group=$(id -gn)
+sudo chown $user:$group "$sample_dir"/*
+chmod 660 "$sample_dir"/*
 
 sudo cat /proc/lock_stat > "$test_dir/lock_stat"
 
 python "$tool_path/lockstat-parser.py" "$sample_dir" "$test_dir/samples.pickle"&
-python "$tool_path/lockstat-graph.py" "$test_dir"
+#python "$tool_path/lockstat-graph.py" "$test_dir"

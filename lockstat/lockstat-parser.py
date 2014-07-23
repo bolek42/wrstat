@@ -4,8 +4,39 @@ import sys
 import csv
 import pickle
 
-############## lockstat ##############
+############## diskstats ##############
+def diskstats_read( filename):
+	file = open( filename, "r")
 
+	raw = list( csv.reader( file, delimiter=' '))
+	#remove whitespaces and empty lines
+	rows = map( lambda row: filter(lambda s: s != '', row), raw)
+
+	devices = {}
+	#to track the type of the current row we use a simple DFA
+	state = "lock_class"
+	for row in rows:
+		device = {}
+		device[ "major-number"] = int( row[ 0])
+		device[ "minor-number"] = int( row[ 1])
+		device[ "device-name"] = row[ 2]
+		device[ "reads-completed"] = int( row[ 3])
+		device[ "reads-merger"] = int( row[ 4])
+		device[ "sectors-read"] = int( row[ 5])
+		device[ "time-reading"] = int( row[ 6])
+		device[ "writes-completed"] = int( row[ 7])
+		device[ "writes-merger"] = int( row[ 8])
+		device[ "sectors-written"] = int( row[ 9])
+		device[ "time-write"] = int( row[ 10])
+		device[ "in-progress"] = int( row[ 11])
+		device[ "time-io"] = int( row[ 12])
+		device[ "time-io-weighted"] = int( row[ 12])
+		devices[ row[2]] = {}
+	file.close()
+
+	return devices
+
+############## lockstat ##############
 def lockstat_parse_lock_class( row):
 	if len( row) < 11:
 		print "invalid usage row"
@@ -13,27 +44,28 @@ def lockstat_parse_lock_class( row):
 
 	lockname = " ".join( row[ 0 : len( row) - 11 + 1])[0:-1]
 	data = row[ len( row) - 11 + 1 ::]
-	usage = {"name" : lockname,
-		"read-locks" : [],
-		"write-locks" : [],
-		"con-bounces" : int( data[0]),
-		"contentions" : int( data[1]),
-		"waittime-min" : float( data[2]),
-		"waittime-max" : float( data[3]),
-		"waittime-total" : float( data[4]),
-		"acq-bounces" : int( data[5]),
-		"acquisitions" : int( data[6]),
-		"holdtime-min" : float( data[7]),
-		"holdtime-max" : float( data[8]),
-		"holdtime-total" : float( data[9])
-		}
+	usage = {}
+	usage[ "name"] = lockname,
+	usage[ "read-locks"] = []
+	usage[ "write-locks"] = []
+	usage[ "con-bounces"] = int( data[0])
+	usage[ "contentions"] = int( data[1])
+	usage[ "waittime-min"] = float( data[2])
+	usage[ "waittime-max"] = float( data[3])
+	usage[ "waittime-total"] = float( data[4])
+	usage[ "acq-bounces"] = int( data[5])
+	usage[ "acquisitions"] = int( data[6])
+	usage[ "holdtime-min"] = float( data[7])
+	usage[ "holdtime-max"] = float( data[8])
+	usage[ "holdtime-total"] = float( data[9])
 		
 	return usage
 
 def lockstat_parse_lock( row):
-	lock = { "con-bounces" : int( row[1]),
-		"addr" : row[2],
-		"symbol" : row[3]}
+	lock = {}
+	lock[ "con-bounces"] = int( row[1])
+	lock[ "addr"] = row[2]
+	lock[ "symbol"] = row[3]
 
 	return lock
 
@@ -83,16 +115,22 @@ def stat_unit( u):
 def stat_cpurow( row):
 	cpu = {}
 	name = row[0]
-	cpu[ "user"] = int( row[1]) if len( row[1]) > 1 else None
-	cpu[ "nice"] = int( row[2]) if len( row[2]) > 2 else None
-	cpu[ "system"] = int( row[3]) if len( row[3]) > 3 else None
-	cpu[ "idle"] = int( row[4]) if len( row[4]) > 4 else None
-	cpu[ "iowait"] = int( row[5]) if len( row[5]) > 5 else None
-	cpu[ "irq"] = int( row[6]) if len( row[6]) > 6 else None
-	cpu[ "softirq"] = int( row[7]) if len( row[7]) > 7 else None
-	cpu[ "steal"] = int( row[8]) if len( row[8]) > 8 else None
-	cpu[ "guest"] = int( row[9]) if len( row[9]) > 9 else None
-	cpu[ "guest_nice"] = int( row[10]) if len( row[10]) > 10 else None
+	cpu[ "user"] = int( row[1])
+	cpu[ "nice"] = int( row[2])
+	cpu[ "system"] = int( row[3])
+	cpu[ "idle"] = int( row[4])
+	if len( row) > 5:
+		cpu[ "iowait"] = int( row[5])
+	if len( row) > 6:
+		cpu[ "irq"] = int( row[6])
+	if len( row) > 7:
+		cpu[ "softirq"] = int( row[7])
+	if len( row) > 8:
+		cpu[ "steal"] = int( row[8])
+	if len( row) > 9:
+		cpu[ "guest"] = int( row[9])
+	if len( row) > 10:
+		cpu[ "guest_nice"] = int( row[10])
 
 	return name, cpu
 	
@@ -117,6 +155,7 @@ def stat_read( filename):
 	stat["n_cpu"] = n_cpu
 	return stat
 
+## actual main ##
 if __name__ == "__main__":
 	if len( sys.argv) != 3:
 		print "usage: %s sample_path sample_file.pickle" % sys.argv[0]
@@ -139,7 +178,7 @@ if __name__ == "__main__":
 			cont = True
 			if t == 0:
 				samples[ "diskstats"] = []
-			samples[ "diskstats"].append( t)
+			samples[ "diskstats"].append( diskstats_read( "%s/diskstats_%d" % ( sample_path, t)))
 		if ("lock_stat_%d" % t) in files:
 			cont = True
 			if t == 0:

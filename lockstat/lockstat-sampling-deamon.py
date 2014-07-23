@@ -3,7 +3,6 @@ import sys
 import signal
 import threading
 import shutil
-import os
 
 files = []
 path = ""
@@ -16,7 +15,6 @@ def capture():
 			dest = "%s/%s_%d" % ( path, src.replace( "/proc/", "").replace( "/", "_"), i)
 			print "%s -> %s" % ( src, dest)
 			shutil.copy( src, dest)
-			os.chmod( dest, 0b000000110) # rwxrwxrwx = 000000110
 		except:
 			print "failed copy %s" % src
 
