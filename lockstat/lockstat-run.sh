@@ -3,10 +3,6 @@
 #$1=test name
 #$2..$#= cmd
 
-vmlinux="/home/hammel/linux/vmlinux"
-procfiles="/proc/stat /proc/lock_stat /proc/diskstats "
-kernel_mod="/home/hammel/linux/"
-
 #get the location of the current script
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -15,6 +11,10 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
   [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
 tool_path="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+vmlinux="$( cat "$tool_path/lockstat.config" | grep "vmlinux" | cut -d " "  -f 2-)"
+procfiles="$( cat "$tool_path/lockstat.config" | grep "procfiles" | cut -d " "  -f 2-)"
+kernel_mod="$( cat "$tool_path/lockstat.config" | grep "kernel_mod" | cut -d " "  -f 2-)"
 
 #parsing arguments
 if [ $# -lt 2 ]; then
@@ -43,7 +43,7 @@ echo "clearing lockstat"
 sudo su -m -c "echo 0 > /proc/lock_stat"
 
 #init Oprofile
-if [ "$(which opcontrol 2>/dev/null)" = "" ]; then
+if [ "$(which opcontrol 2>/dev/null)" != "" ]; then
 	echo "starting oprofile"
 	sudo opcontrol --reset
 	sudo opcontrol --deinit
@@ -82,7 +82,7 @@ sudo kill -SIGTERM $sampling_deamon_pid
 wait $sampling_deamon_pid
 
 #deinit oprofile
-if [ "$(which opcontrol 2>/dev/null)" = "" ]; then
+if [ "$(which opcontrol 2>/dev/null)" != "" ]; then
 	sudo opcontrol --stop
 	sudo opcontrol --dump
 	sudo opcontrol --shutdown

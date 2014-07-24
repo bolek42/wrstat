@@ -9,7 +9,7 @@ import operator
 import pickle
 import Gnuplot, Gnuplot.funcutils
 
-sample_rate = 2
+sample_rate = 2.0
 colors = [ 	
 		'#FF0000', '#00FF00', '#0000FF', 
 		'#00FFFF', '#FF00FF', '#FFFF00', 
@@ -231,7 +231,6 @@ def plot_lock_stat( test_dir, samples):
 		data[ class_name] = lock_class[ "holdtime-total"]
 	plot_histogram_percentage( data, "%s/lockstat_holdtime.png" % test_dir, "Waittime Total", 0)
 
-	#plot_topn( samples, 2, "holdtime-total", 8, "%s/hold-time-sreies.png" % sys.argv[1], "Total Hold Time")
 	#determine top n
 	top_names = []
 	for key, value in samples[-1].iteritems():
@@ -304,29 +303,30 @@ def plot_stat( test_dir, stat):
 
 def plot_diskstats( test_dir, diskstats):
 	#aggregate sampled
-	data = { "read" : [], "write" : []}
 
-	#FIXME remove this hack when time is the last dimension!
+	#FIXME remove this when time is the last dimension!
 	names = []
 	for name, device in diskstats[0].iteritems():
 		if device[ "sectors-read"] + device[ "sectors-write"] > 0:
 			names.append( name)
 
 	for name in names:
+		data = { "read" : [], "write" : []}
 		for t in range( len( diskstats) - 1):
 			read  = diskstats[t + 1][name]["time-read"] - diskstats[t][name]["time-read"]
 			write = diskstats[t + 1][name]["time-write"] - diskstats[t][name]["time-write"]
 
 			#normalize
 			data[ "read"].append( ((t / sample_rate), read * sample_rate))
-			data[ "write"].append( write)
-
+			data[ "write"].append( ((t / sample_rate), write * sample_rate))
+		print name
+		print data
 		cmds = [	"set key outside",
 				"set title 'Time Reading/Writing %s'" % name,
 				"set xlabel 'runtime ( sec)'",
 				"set ylabel 'ms/s'"]
 
-	plot_series( data, "%s/diskstats_time_io.png" % test_dir, cmds)
+		plot_series( data, "%s/diskstats_time_%s_io.png" % ( test_dir, name), cmds)
 
 if __name__ == "__main__":
 	if len( sys.argv) != 2:
