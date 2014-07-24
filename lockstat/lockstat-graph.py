@@ -4,7 +4,6 @@ import os
 import sys
 import csv
 import numpy
-#import pylab
 import operator
 import pickle
 import Gnuplot, Gnuplot.funcutils
@@ -313,8 +312,8 @@ def plot_diskstats( test_dir, diskstats):
 	for name in names:
 		data = { "read" : [], "write" : []}
 		for t in range( len( diskstats) - 1):
-			read  = diskstats[t + 1][name]["time-read"] - diskstats[t][name]["time-read"]
-			write = diskstats[t + 1][name]["time-write"] - diskstats[t][name]["time-write"]
+			read  = diskstats[t + 1][name]["sectors-read"] - diskstats[t][name]["sectors-read"]
+			write = diskstats[t + 1][name]["sectors-write"] - diskstats[t][name]["sectors-write"]
 
 			#normalize
 			data[ "read"].append( ((t / sample_rate), read * sample_rate))
@@ -322,15 +321,15 @@ def plot_diskstats( test_dir, diskstats):
 		print name
 		print data
 		cmds = [	"set key outside",
-				"set title 'Time Reading/Writing %s'" % name,
+				"set title 'Sectors Reading/Writing %s'" % name,
 				"set xlabel 'runtime ( sec)'",
-				"set ylabel 'ms/s'"]
+				"set ylabel 'Sectors/s'"]
 
-		plot_series( data, "%s/diskstats_time_%s_io.png" % ( test_dir, name), cmds)
+		plot_series( data, "%s/diskstats_sectors_%s_io.png" % ( test_dir, name), cmds)
 
 if __name__ == "__main__":
 	if len( sys.argv) != 2:
-		print "usage: %s test_dir" % sys.argv[0]
+		print "usage: %s test_dir oprofile_filter1 ...(filtering not implemented)" % sys.argv[0]
 		exit(1)
 
 	# load samples
