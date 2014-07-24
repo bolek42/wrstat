@@ -11,17 +11,25 @@ i = 0
 #FIXME buffering because of diskio lags
 def capture():
 	global i
+	snapshot = {}
 	for src in files:
 		try:
 			dest = "%s/%s_%d" % ( path, src.replace( "/proc/", "").replace( "/", "_"), i)
-			print "%s -> %s" % ( src, dest)
-			shutil.copy( src, dest)
+			print "loading %s" % src
+			f = open( src, "r")
+			snapshot[ dest] = f.read()
+			f.close()
 		except:
 			print "failed copy %s" % src
-
 	i += 1
 
 	threading.Timer(0.5, capture).start();
+
+	for dest, data in snapshot.iteritems():
+		print "writing %s" % dest
+		f = open( dest, "w")
+		f.write( str( data))
+		f.close()
 
 def signal_handler(signal, frame):
 	print "captured signal " + str( signal)
