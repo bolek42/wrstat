@@ -265,6 +265,7 @@ def plot_lock_stat( test_dir, samples):
 	plot_series( data, "%s/lockstat_waittime_top.svg" % test_dir, cmds)
 	plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
 
+#FIXME use plot_histogram_percentage
 def plot_stat( test_dir, stat):
 	#aggregate sampled
 	data = { "user" : [], "nice" : [], "system" : [], "idle" : []}
@@ -301,6 +302,51 @@ def plot_stat( test_dir, stat):
 
 	plot_histogram( data, "%s/stat_percpu.svg" % test_dir, "stat per cpu")
 
+def plot_diskstats( test_dir, diskstats):
+	#aggregate sampled
+	data = { "read" : [], "write" : []}
+
+	#FIXME remove this hack when time is the last dimension!
+	names = []
+	print diskstats[0]
+	for name, device in diskstats[0].iteritems():
+		if device[ "sectors-read"] + device[ "sectors-write"] > 0:
+			names.append( name)
+
+	for name in names:
+		for t in range( len( diskstats) - 1):
+			read  = diskstats[t + 1][name]["time-read"] - diskstats[t][name]["time-read"]
+			write = diskstats[t + 1][name]["time-write"] - diskstats[t][name]["time-write"]
+
+			#normalize
+			data[ "read"].append( ((t / sample_rate), read * sample_rate))
+			data[ "write"].append( write)
+
+		cmds = [	"set key outside",
+				"set title 'Time Reading/Writing %s'" % name,
+				"set xlabel 'runtime ( sec)'",
+				"set ylabel 'ms/s'"]
+
+	plot_series( data, "%s/diskstats_time_io.svg" % test_dir, cmds)
+	"""
+	#per cpu
+	data = { "user" : [], "nice" : [], "system" : [], "idle" : []}
+	for cpu in range( stat[0]["n_cpu"]):
+		user = stat[-1]["cpu%d" % cpu]["user"] - stat[0]["cpu%d" % cpu]["user"]
+		nice = stat[-1]["cpu%d" % cpu]["nice"] - stat[0]["cpu%d" % cpu]["nice"]
+		system = stat[-1]["cpu%d" % cpu]["system"] - stat[0]["cpu%d" % cpu]["system"]
+		idle = stat[-1]["cpu%d" % cpu]["idle"] - stat[0]["cpu%d" % cpu]["idle"]
+
+		#normalize
+		total = float( user + nice + system + idle)
+		data[ "user"].append( user / total * 100)
+		data[ "nice"].append( nice / total * 100)
+		data[ "system"].append( system / total * 100)
+		data[ "idle"].append( idle / total * 100)
+
+	plot_histogram( data, "%s/stat_percpu.svg" % test_dir, "stat per cpu")
+	"""
+
 if __name__ == "__main__":
 	if len( sys.argv) != 2:
 		print "usage: %s test_dir" % sys.argv[0]
@@ -312,6 +358,8 @@ if __name__ == "__main__":
 
 	if "lock_stat" in samples:
 		plot_lock_stat( sys.argv[1], samples["lock_stat"])
+	if "diskstats" in samples:
+		plot_diskstats( sys.argv[1], samples["diskstats"])
 	if "stat" in samples:
 		plot_stat( sys.argv[1], samples["stat"])
 	if "oprofile" in samples:

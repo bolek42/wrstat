@@ -4,6 +4,7 @@ import sys
 import csv
 import pickle
 
+#TODO large try except blocks instead of if ;)
 ############## diskstats ##############
 def diskstats_read( filename):
 	file = open( filename, "r")
@@ -13,8 +14,6 @@ def diskstats_read( filename):
 	rows = map( lambda row: filter(lambda s: s != '', row), raw)
 
 	devices = {}
-	#to track the type of the current row we use a simple DFA
-	state = "lock_class"
 	for row in rows:
 		device = {}
 		device[ "major-number"] = int( row[ 0])
@@ -23,15 +22,15 @@ def diskstats_read( filename):
 		device[ "reads-completed"] = int( row[ 3])
 		device[ "reads-merger"] = int( row[ 4])
 		device[ "sectors-read"] = int( row[ 5])
-		device[ "time-reading"] = int( row[ 6])
+		device[ "time-read"] = int( row[ 6])
 		device[ "writes-completed"] = int( row[ 7])
 		device[ "writes-merger"] = int( row[ 8])
-		device[ "sectors-written"] = int( row[ 9])
+		device[ "sectors-write"] = int( row[ 9])
 		device[ "time-write"] = int( row[ 10])
 		device[ "in-progress"] = int( row[ 11])
 		device[ "time-io"] = int( row[ 12])
 		device[ "time-io-weighted"] = int( row[ 12])
-		devices[ row[2]] = {}
+		devices[ row[2]] = device
 	file.close()
 
 	return devices
