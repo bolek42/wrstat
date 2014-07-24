@@ -20,7 +20,7 @@ colors = [
 
 #term item
 def plot_series( data, file, cmds, g = Gnuplot.Gnuplot( debug=0)):
-	g( "set terminal svg")
+	g( "set terminal png")
 	g( "set output '%s'" % file)
 	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 
@@ -87,11 +87,11 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 
 		#plot
 		g = Gnuplot.Gnuplot( debug=0)
+		g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 		g( "reset")
-		g( "set terminal svg")
-		g( "set output '%s/top-%d.svg'" % ( path, i))
+		g( "set terminal png")
+		g( "set output '%s/top-%d.png'" % ( path, i))
 
-		#g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 		g( "set multiplot title '%s'" % class_name)
 
 
@@ -140,7 +140,7 @@ def plot_histogram( data, filename, title):
 	#histogram
 	g = Gnuplot.Gnuplot( debug=0)
 	g( "reset")
-	g( "set terminal svg")
+	g( "set terminal png")
 	g( "set output '%s'" % filename)
 	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 	g( "set yrange [0:100]")
@@ -175,7 +175,7 @@ def plot_histogram_percentage( data, filename, title, discarded):
 	#histogram
 	g = Gnuplot.Gnuplot( debug=0)
 	g( "reset")
-	g( "set terminal svg")
+	g( "set terminal png")
 	g( "set output '%s'" % filename)
 	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 	g( "set yrange [0:100]")
@@ -196,7 +196,7 @@ def plot_oprofile_percentage( prefix, rows, key, title_prefix, discarded):
 	for row in rows:
 		data[ row["symbol_name"]] = float( row[key])
 
-	plot_histogram_percentage( data, "%s_sym.svg" % prefix, "%s (Symbol Names)" % title_prefix, discarded)
+	plot_histogram_percentage( data, "%s_sym.png" % prefix, "%s (Symbol Names)" % title_prefix, discarded)
 
 	apps = {}
 	for row in rows:
@@ -209,7 +209,7 @@ def plot_oprofile_percentage( prefix, rows, key, title_prefix, discarded):
 	for app, usage in sorted( apps.iteritems(), key=operator.itemgetter(1)):
 		data[ app] = float( usage)
 
-	plot_histogram_percentage( data, "%s_app.svg" % prefix, "%s (App Names)" % title_prefix, discarded)
+	plot_histogram_percentage( data, "%s_app.png" % prefix, "%s (App Names)" % title_prefix, discarded)
 
 def plot_oprofile( test_dir, data):
 	n_cpu = data[ "n_cpu"]
@@ -224,14 +224,14 @@ def plot_lock_stat( test_dir, samples):
 	data = {}
 	for (class_name, lock_class) in samples[-1].iteritems():
 		data[ class_name] = lock_class[ "waittime-total"]
-	plot_histogram_percentage( data, "%s/lockstat_waititme.svg" % test_dir, "Waittime Total", 0)
+	plot_histogram_percentage( data, "%s/lockstat_waititme.png" % test_dir, "Waittime Total", 0)
 
 	data = {}
 	for (class_name, lock_class) in samples[-1].iteritems():
 		data[ class_name] = lock_class[ "holdtime-total"]
-	plot_histogram_percentage( data, "%s/lockstat_holdtime.svg" % test_dir, "Waittime Total", 0)
+	plot_histogram_percentage( data, "%s/lockstat_holdtime.png" % test_dir, "Waittime Total", 0)
 
-	#plot_topn( samples, 2, "holdtime-total", 8, "%s/hold-time-sreies.svg" % sys.argv[1], "Total Hold Time")
+	#plot_topn( samples, 2, "holdtime-total", 8, "%s/hold-time-sreies.png" % sys.argv[1], "Total Hold Time")
 	#determine top n
 	top_names = []
 	for key, value in samples[-1].iteritems():
@@ -262,7 +262,7 @@ def plot_lock_stat( test_dir, samples):
 			"set xlabel 'runtime ( sec)'",
 			"set ylabel 'usec/s'"]
 
-	plot_series( data, "%s/lockstat_waittime_top.svg" % test_dir, cmds)
+	plot_series( data, "%s/lockstat_waittime_top.png" % test_dir, cmds)
 	plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
 
 #FIXME use plot_histogram_percentage
@@ -283,7 +283,7 @@ def plot_stat( test_dir, stat):
 		data[ "system"].append( system / total * 100)
 		data[ "idle"].append( idle / total * 100)
 
-	plot_histogram( data, "%s/stat_aggreagted_sampled.svg" % test_dir, "stat aggreagted sampled")
+	plot_histogram( data, "%s/stat_aggreagted_sampled.png" % test_dir, "stat aggreagted sampled")
 
 	#per cpu
 	data = { "user" : [], "nice" : [], "system" : [], "idle" : []}
@@ -300,7 +300,7 @@ def plot_stat( test_dir, stat):
 		data[ "system"].append( system / total * 100)
 		data[ "idle"].append( idle / total * 100)
 
-	plot_histogram( data, "%s/stat_percpu.svg" % test_dir, "stat per cpu")
+	plot_histogram( data, "%s/stat_percpu.png" % test_dir, "stat per cpu")
 
 def plot_diskstats( test_dir, diskstats):
 	#aggregate sampled
@@ -308,7 +308,6 @@ def plot_diskstats( test_dir, diskstats):
 
 	#FIXME remove this hack when time is the last dimension!
 	names = []
-	print diskstats[0]
 	for name, device in diskstats[0].iteritems():
 		if device[ "sectors-read"] + device[ "sectors-write"] > 0:
 			names.append( name)
@@ -327,25 +326,7 @@ def plot_diskstats( test_dir, diskstats):
 				"set xlabel 'runtime ( sec)'",
 				"set ylabel 'ms/s'"]
 
-	plot_series( data, "%s/diskstats_time_io.svg" % test_dir, cmds)
-	"""
-	#per cpu
-	data = { "user" : [], "nice" : [], "system" : [], "idle" : []}
-	for cpu in range( stat[0]["n_cpu"]):
-		user = stat[-1]["cpu%d" % cpu]["user"] - stat[0]["cpu%d" % cpu]["user"]
-		nice = stat[-1]["cpu%d" % cpu]["nice"] - stat[0]["cpu%d" % cpu]["nice"]
-		system = stat[-1]["cpu%d" % cpu]["system"] - stat[0]["cpu%d" % cpu]["system"]
-		idle = stat[-1]["cpu%d" % cpu]["idle"] - stat[0]["cpu%d" % cpu]["idle"]
-
-		#normalize
-		total = float( user + nice + system + idle)
-		data[ "user"].append( user / total * 100)
-		data[ "nice"].append( nice / total * 100)
-		data[ "system"].append( system / total * 100)
-		data[ "idle"].append( idle / total * 100)
-
-	plot_histogram( data, "%s/stat_percpu.svg" % test_dir, "stat per cpu")
-	"""
+	plot_series( data, "%s/diskstats_time_io.png" % test_dir, cmds)
 
 if __name__ == "__main__":
 	if len( sys.argv) != 2:

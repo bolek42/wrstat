@@ -8,6 +8,7 @@ files = []
 path = ""
 i = 0
 
+#FIXME buffering because of diskio lags
 def capture():
 	global i
 	for src in files:
