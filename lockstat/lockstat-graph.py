@@ -157,21 +157,49 @@ def plot_histogram_percentage( data, filename, title, discarded):
 	histogram = []
 
 	sigma = float( discarded)
-	for key, value in data.iteritems():
-		sigma += value
 
-	others = 100.0
-	for key, value in sorted( data.iteritems(), key=lambda (key, value): value, reverse=True)[0:16]:
-		percentage = value * 100.0 / sigma
-		others -= percentage
-		pl = Gnuplot.PlotItems.Data( [ percentage], title=("%s (%.2f%%)" % (str( key), percentage)))
+	print filename
+	sigma = None
+	n_samples = 0
+	for key, values in data.iteritems():
+		if sigma is None:
+			n_samples = len( values)
+			sigma = [ 0.0] * n_samples
+
+		if len( values) != n_samples:
+			print "Graphing Error: invalid number of samples in plot_histogram_percentage"
+			return
+
+		for i in range( n_samples):
+			sigma[ i] += values[i]
+
+	others = [100.0] * n_samples
+	percentage = [ 0.0] * n_samples
+	for key, values in sorted( data.iteritems(), key=lambda (key, value): value, reverse=True)[0:16]:
+		#over all samples
+		for i in range( n_samples):
+			percentage[i] = values[i] * 100.0 / sigma[i]
+			others[i] -= percentage[i]
+
+		#give gnuplot the category key
+		print str( key)
+		print percentage
+		if n_samples == 1:
+			pl = Gnuplot.PlotItems.Data( percentage, title=("%s (%.2f%%)" % (str( key), percentage[0])))
+		else:
+			pl = Gnuplot.PlotItems.Data( percentage, title=str( key))
 		histogram.append( pl)
-	if others > 0.0:
-		pl = Gnuplot.PlotItems.Data( [ others], title=("others (%.2f%%)" % percentage))
-		histogram.append( pl)
+
+	#others category
+	if n_samples == 1:
+		pl = Gnuplot.PlotItems.Data( others, title="others")
+	else:
+		pl = Gnuplot.PlotItems.Data( others, title="others")
+
+	histogram.append( pl)
 	histogram.reverse()
 
-	#histogram
+	#actual gnuplot stuff
 	g = Gnuplot.Gnuplot( debug=0)
 	g( "reset")
 	g( "set terminal png")
@@ -263,42 +291,29 @@ def plot_lock_stat( test_dir, samples):
 	plot_series( data, "%s/lockstat_waittime_top.png" % test_dir, cmds)
 	plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
 
-#FIXME use plot_histogram_percentage
 def plot_stat( test_dir, stat):
 	#aggregate sampled
 	data = { "user" : [], "nice" : [], "system" : [], "idle" : []}
 
 	for t in range( len( stat) - 1):
-		user = stat[t + 1]["cpu"]["user"] - stat[t]["cpu"]["user"]
-		nice = stat[t + 1]["cpu"]["nice"] - stat[t]["cpu"]["nice"]
-		system = stat[t + 1]["cpu"]["system"] - stat[t]["cpu"]["system"]
-		idle = stat[t + 1]["cpu"]["idle"] - stat[t]["cpu"]["idle"]
+		data[ "user"].append( stat[t + 1]["cpu"]["user"] - stat[t]["cpu"]["user"])
+		data[ "nice"].append( stat[t + 1]["cpu"]["nice"] - stat[t]["cpu"]["nice"])
+		data[ "system"].append( stat[t + 1]["cpu"]["system"] - stat[t]["cpu"]["system"])
+		data[ "idle"].append( stat[t + 1]["cpu"]["idle"] - stat[t]["cpu"]["idle"])
 
-		#normalize
-		total = float( user + nice + system + idle)
-		data[ "user"].append( user / total * 100)
-		data[ "nice"].append( nice / total * 100)
-		data[ "system"].append( system / total * 100)
-		data[ "idle"].append( idle / total * 100)
-
-	plot_histogram( data, "%s/stat_aggreagted_sampled.png" % test_dir, "stat aggreagted sampled")
+	plot_histogram_percentage( data, "%s/stat_aggreagted_sampled.png" % test_dir, "stat aggreagted sampled", 0)
 
 	#per cpu
 	data = { "user" : [], "nice" : [], "system" : [], "idle" : []}
 	for cpu in range( stat[0]["n_cpu"]):
-		user = stat[-1]["cpu%d" % cpu]["user"] - stat[0]["cpu%d" % cpu]["user"]
-		nice = stat[-1]["cpu%d" % cpu]["nice"] - stat[0]["cpu%d" % cpu]["nice"]
-		system = stat[-1]["cpu%d" % cpu]["system"] - stat[0]["cpu%d" % cpu]["system"]
-		idle = stat[-1]["cpu%d" % cpu]["idle"] - stat[0]["cpu%d" % cpu]["idle"]
+		data[ "user"].append( stat[-1]["cpu%d" % cpu]["user"] - stat[0]["cpu%d" % cpu]["user"])
+		data[ "user"].append( stat[-1]["cpu%d" % cpu]["nice"] - stat[0]["cpu%d" % cpu]["nice"])
+		data[ "user"].append( stat[-1]["cpu%d" % cpu]["system"] - stat[0]["cpu%d" % cpu]["system"])
+		data[ "user"].append( stat[-1]["cpu%d" % cpu]["idle"] - stat[0]["cpu%d" % cpu]["idle"])
 
-		#normalize
-		total = float( user + nice + system + idle)
-		data[ "user"].append( user / total * 100)
-		data[ "nice"].append( nice / total * 100)
-		data[ "system"].append( system / total * 100)
-		data[ "idle"].append( idle / total * 100)
-
-	plot_histogram( data, "%s/stat_percpu.png" % test_dir, "stat per cpu")
+	print stat[0]["n_cpu"]
+	print data
+	plot_histogram_percentage( data, "%s/stat_percpu.png" % test_dir, "stat per cpu", 0)
 
 def plot_diskstats( test_dir, diskstats):
 	#aggregate sampled
