@@ -308,13 +308,13 @@ def plot_lockstat_unsi_series( stat, cpu, filename, title):
 	plot_histogram_percentage( data, filename, title, 0)
 """
 def plot_lockstat_unsi_series( stat, cpu, filename, title):
-	data = { "user" : [], "nice" : [], "system" : [], "idle" : []}
+	data = {}
+	for key, value in stat[0][cpu].iteritems():
+		data[ key] = []
 
 	for t in range( len( stat) - 1):
-		data[ "user"].append( stat[t + 1][cpu]["user"] - stat[t][cpu]["user"])
-		data[ "nice"].append( stat[t + 1][cpu]["nice"] - stat[t][cpu]["nice"])
-		data[ "system"].append( stat[t + 1][cpu]["system"] - stat[t][cpu]["system"])
-		data[ "idle"].append( stat[t + 1][cpu]["idle"] - stat[t][cpu]["idle"])
+		for key, value in data.iteritems():
+			value.append( stat[t + 1][cpu][key] - stat[t][cpu][key])
 
 	plot_histogram_percentage( data, filename, title, 0)
 
@@ -322,18 +322,19 @@ def plot_stat( test_dir, stat):
 	#aggregate sampled
 	plot_lockstat_unsi_series( stat, "cpu", "%s/stat_aggreagted_sampled.png" % test_dir, "stat aggreagted sampled")
 
-
 	#per cpu
-	data = { "user" : [], "nice" : [], "system" : [], "idle" : []}
+	data = {}
+	for key, value in stat[0]["cpu"].iteritems():
+		data[ key] = []
+
 	for cpu in range( stat[0]["n_cpu"]):
-		data[ "user"].append( stat[-1]["cpu%d" % cpu]["user"] - stat[0]["cpu%d" % cpu]["user"])
-		data[ "nice"].append( stat[-1]["cpu%d" % cpu]["nice"] - stat[0]["cpu%d" % cpu]["nice"])
-		data[ "system"].append( stat[-1]["cpu%d" % cpu]["system"] - stat[0]["cpu%d" % cpu]["system"])
-		data[ "idle"].append( stat[-1]["cpu%d" % cpu]["idle"] - stat[0]["cpu%d" % cpu]["idle"])
+		for key, value in data.iteritems():
+			value.append( stat[-1]["cpu%d" % cpu][key] - stat[0]["cpu%d" % cpu][key])
+
 		plot_lockstat_unsi_series( stat, "cpu%d" % cpu, "%s/stat_cpu%d_sampled.png" % ( test_dir, cpu), "stat CPU %d sampled" % cpu)
 
-	print stat[0]["n_cpu"]
-	print data
+
+	#aggregated
 	plot_histogram_percentage( data, "%s/stat_percpu.png" % test_dir, "stat per cpu", 0)
 
 def plot_diskstats( test_dir, diskstats):
