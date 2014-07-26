@@ -11,24 +11,30 @@ import Gnuplot, Gnuplot.funcutils
 sample_rate = 2.0
 colors = [ 	
 		'#FF0000', '#00FF00', '#0000FF', 
-		'#00FFFF', '#FF00FF', '#FFFF00', 
-		'#880000', '#008800', '#000088', 
 		'#008888', '#880088', '#888800', 
 		'#0088FF', '#FF8800', '#88FF00',
-		'#00FF88', '#88FF00', '#FF8800']
+		'#004444', '#440044', '#444400',
+		'#880000', '#008800', '#000088', 
+		'#440000', '#004400', '#000044', 
+		'#00FF88', '#88FF00', '#FF8800',
+		'#000000']
 
 #term item
-def plot_series( data, file, cmds, g = Gnuplot.Gnuplot( debug=0)):
-	g( "set terminal png")
-	g( "set output '%s'" % file)
+def plot_series( data, filename, cmds, g = Gnuplot.Gnuplot( debug=0)):
+	g( "set terminal svg")
+	g( "set output '%s'" % filename)
 	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 
 	for cmd in cmds:
 		g( cmd)
 
 	plots = []
+	i = 0
 	for name, series in data.iteritems():
-		plots.append( Gnuplot.PlotItems.Data( series, with_="lines", title=str(name)))
+		print "lines linecolor rgb '%s'" % colors[ i % len( colors)]
+		plots.append( Gnuplot.PlotItems.Data( series,
+			with_="lines linecolor rgb '%s'" % colors[ i % len( colors)], title=str(name)))
+		i += 1
 
 	g.plot( *plots)
 
@@ -88,8 +94,8 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 		g = Gnuplot.Gnuplot( debug=0)
 		g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 		g( "reset")
-		g( "set terminal png")
-		g( "set output '%s/top-%d.png'" % ( path, i))
+		g( "set terminal svg")
+		g( "set output '%s/top-%d.svg'" % ( path, i))
 
 		g( "set multiplot title '%s'" % class_name)
 
@@ -139,7 +145,7 @@ def plot_histogram( data, filename, title):
 	#histogram
 	g = Gnuplot.Gnuplot( debug=0)
 	g( "reset")
-	g( "set terminal png")
+	g( "set terminal svg")
 	g( "set output '%s'" % filename)
 	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 	g( "set yrange [0:100]")
@@ -147,7 +153,7 @@ def plot_histogram( data, filename, title):
 	g( "set title '%s'" % title)
 	g( "set style data histograms")
 	g( "set style histogram rowstacked")
-	g( "set style fill solid noborder")
+	g( "set style fill solid border -1")
 	g( "set key invert reverse Left outside")
 	g.plot(	*histogram)
 
@@ -206,7 +212,7 @@ def plot_histogram_percentage( data, filename, title, discarded):
 	#actual gnuplot stuff
 	g = Gnuplot.Gnuplot( debug=0)
 	g( "reset")
-	g( "set terminal png")
+	g( "set terminal svg")
 	g( "set output '%s'" % filename)
 	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 	g( "set yrange [0:100]")
@@ -214,7 +220,7 @@ def plot_histogram_percentage( data, filename, title, discarded):
 	g( "set title '%s'" % title)
 	g( "set style data histograms")
 	g( "set style histogram rowstacked")
-	g( "set style fill solid noborder")
+	g( "set style fill solid border -1")
 	g( "set key invert reverse Left outside")
 	g.plot(	*histogram)
 
@@ -227,7 +233,7 @@ def plot_oprofile_percentage( prefix, rows, key, title_prefix, discarded):
 	for row in rows:
 		data[ row["symbol_name"]] = float( row[key])
 
-	plot_histogram_percentage( data, "%s_sym.png" % prefix, "%s (Symbol Names)" % title_prefix, discarded)
+	plot_histogram_percentage( data, "%s_sym.svg" % prefix, "%s (Symbol Names)" % title_prefix, discarded)
 
 	apps = {}
 	for row in rows:
@@ -240,7 +246,7 @@ def plot_oprofile_percentage( prefix, rows, key, title_prefix, discarded):
 	for app, usage in sorted( apps.iteritems(), key=operator.itemgetter(1)):
 		data[ app] = float( usage)
 
-	plot_histogram_percentage( data, "%s_app.png" % prefix, "%s (App Names)" % title_prefix, discarded)
+	plot_histogram_percentage( data, "%s_app.svg" % prefix, "%s (App Names)" % title_prefix, discarded)
 
 def plot_oprofile( test_dir, data):
 	n_cpu = data[ "n_cpu"]
@@ -255,12 +261,12 @@ def plot_lock_stat( test_dir, samples):
 	data = {}
 	for (class_name, lock_class) in samples[-1].iteritems():
 		data[ class_name] = lock_class[ "waittime-total"]
-	plot_histogram_percentage( data, "%s/lockstat_waititme.png" % test_dir, "Waittime Total", 0)
+	plot_histogram_percentage( data, "%s/lockstat_waititme.svg" % test_dir, "Waittime Total", 0)
 
 	data = {}
 	for (class_name, lock_class) in samples[-1].iteritems():
 		data[ class_name] = lock_class[ "holdtime-total"]
-	plot_histogram_percentage( data, "%s/lockstat_holdtime.png" % test_dir, "Waittime Total", 0)
+	plot_histogram_percentage( data, "%s/lockstat_holdtime.svg" % test_dir, "Waittime Total", 0)
 
 	#determine top n
 	top_names = []
@@ -292,22 +298,10 @@ def plot_lock_stat( test_dir, samples):
 			"set xlabel 'runtime ( sec)'",
 			"set ylabel 'usec/s'"]
 
-	plot_series( data, "%s/lockstat_waittime_top.png" % test_dir, cmds)
+	plot_series( data, "%s/lockstat_waittime_top.svg" % test_dir, cmds)
 	plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
 
-"""
-def plot_lockstat_unsi_series( stat, cpu, filename, title):
-	data = { "user" : [], "nice" : [], "system" : [], "idle" : []}
-
-	for t in range( len( stat) - 1):
-		data[ "user"].append( stat[t + 1][cpu]["user"] - stat[t][cpu]["user"])
-		data[ "nice"].append( stat[t + 1][cpu]["nice"] - stat[t][cpu]["nice"])
-		data[ "system"].append( stat[t + 1][cpu]["system"] - stat[t][cpu]["system"])
-		data[ "idle"].append( stat[t + 1][cpu]["idle"] - stat[t][cpu]["idle"])
-
-	plot_histogram_percentage( data, filename, title, 0)
-"""
-def plot_lockstat_unsi_series( stat, cpu, filename, title):
+def plot_lockstat_series( stat, cpu, filename, title):
 	data = {}
 	for key, value in stat[0][cpu].iteritems():
 		data[ key] = []
@@ -316,13 +310,21 @@ def plot_lockstat_unsi_series( stat, cpu, filename, title):
 		for key, value in data.iteritems():
 			value.append( stat[t + 1][cpu][key] - stat[t][cpu][key])
 
-	plot_histogram_percentage( data, filename, title, 0)
+	#plot_histogram_percentage( data, filename, title, 0)
+	cmds = [	"set key outside",
+			"set title '%s'" % title,
+			"set key bottom right",
+			"set key horizontal",
+			"set key bmargin",
+			"set xlabel 'runtime ( sec)'",
+			"set ylabel 'Runtime %'"]
+	plot_series( data, filename, cmds)
 
 def plot_stat( test_dir, stat):
 	#aggregate sampled
-	plot_lockstat_unsi_series( stat, "cpu", "%s/stat_aggreagted_sampled.png" % test_dir, "stat aggreagted sampled")
+	plot_lockstat_series( stat, "cpu", "%s/stat_aggreagted_sampled.svg" % test_dir, "Stat aggreagted sampled")
 
-	#per cpu
+	#per cpu aggregated
 	data = {}
 	for key, value in stat[0]["cpu"].iteritems():
 		data[ key] = []
@@ -331,11 +333,12 @@ def plot_stat( test_dir, stat):
 		for key, value in data.iteritems():
 			value.append( stat[-1]["cpu%d" % cpu][key] - stat[0]["cpu%d" % cpu][key])
 
-		plot_lockstat_unsi_series( stat, "cpu%d" % cpu, "%s/stat_cpu%d_sampled.png" % ( test_dir, cpu), "stat CPU %d sampled" % cpu)
+		#per cpu sampled
+		plot_lockstat_series( stat, "cpu%d" % cpu, "%s/stat_cpu%d_sampled.svg" % ( test_dir, cpu), "Stat CPU %d sampled" % cpu)
 
 
 	#aggregated
-	plot_histogram_percentage( data, "%s/stat_percpu.png" % test_dir, "stat per cpu", 0)
+	plot_histogram_percentage( data, "%s/stat_percpu.svg" % test_dir, "Stat per CPU", 0)
 
 def plot_diskstats( test_dir, diskstats):
 	#aggregate sampled
@@ -362,7 +365,7 @@ def plot_diskstats( test_dir, diskstats):
 				"set xlabel 'runtime ( sec)'",
 				"set ylabel 'Sectors/s'"]
 
-		plot_series( data, "%s/diskstats_sectors_%s_io.png" % ( test_dir, name), cmds)
+		plot_series( data, "%s/diskstats_sectors_%s_io.svg" % ( test_dir, name), cmds)
 
 if __name__ == "__main__":
 	if len( sys.argv) != 2:

@@ -107,29 +107,28 @@ def lockstat_read( filename):
 	return lock_classes
 
 ############## stat ##############
-#FIXME
 def stat_unit( u):
-	return int( u)
+	return float( u) / os.sysconf_names['SC_CLK_TCK'] 
 
 def stat_cpurow( row):
 	cpu = {}
 	name = row[0]
-	cpu[ "user"] = int( row[1])
-	cpu[ "nice"] = int( row[2])
-	cpu[ "system"] = int( row[3])
-	cpu[ "idle"] = int( row[4])
+	cpu[ "user"] = stat_unit( row[1])
+	cpu[ "nice"] = stat_unit( row[2])
+	cpu[ "system"] = stat_unit( row[3])
+	cpu[ "idle"] = stat_unit( row[4])
 	if len( row) > 5:
-		cpu[ "iowait"] = int( row[5])
+		cpu[ "iowait"] = stat_unit( row[5])
 	if len( row) > 6:
-		cpu[ "irq"] = int( row[6])
+		cpu[ "irq"] = stat_unit( row[6])
 	if len( row) > 7:
-		cpu[ "softirq"] = int( row[7])
+		cpu[ "softirq"] = stat_unit( row[7])
 	if len( row) > 8:
-		cpu[ "steal"] = int( row[8])
+		cpu[ "steal"] = stat_unit( row[8])
 	if len( row) > 9:
-		cpu[ "guest"] = int( row[9])
+		cpu[ "guest"] = stat_unit( row[9])
 	if len( row) > 10:
-		cpu[ "guest_nice"] = int( row[10])
+		cpu[ "guest_nice"] = stat_unit( row[10])
 
 	return name, cpu
 	
