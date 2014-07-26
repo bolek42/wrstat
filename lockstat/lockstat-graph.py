@@ -119,6 +119,7 @@ def plot_histogram_percentage( data, filename, title, discarded, cmds=[], g = Gn
 	g( "set style histogram rowstacked")
 	g( "set style fill solid border -1")
 	g( "set key invert reverse Left outside")
+	g( "set style line 1 lc rgb 'red'")
 
 	for cmd in cmds:
 		g( cmd)
@@ -338,10 +339,12 @@ def plot_stat( test_dir, stat):
 
 		#per cpu sampled
 		plot_lockstat_series( stat, "cpu%d" % cpu, "%s/stat_cpu%d_sampled.svg" % ( test_dir, cpu), "Stat CPU %d sampled" % cpu)
-
+	
 
 	#aggregated
-	cmds = [ "set xrange [0:10]"]
+	cmds = [ "set xrange [-0.5:%.1f]" % (stat[0]["n_cpu"] - 0.5), #FIXME
+			"set xtics 1",
+			"set xlabel 'CPU'"]
 	plot_histogram_percentage( data, "%s/stat_percpu.svg" % test_dir, "Stat per CPU", 0, cmds)
 
 ### disktats ###
