@@ -9,6 +9,8 @@ import pickle
 import Gnuplot, Gnuplot.funcutils
 
 sample_rate = 2.0
+
+### GNUPlot ###
 colors = [ 	
 		'#FF0000', '#00FF00', '#0000FF', 
 		'#008888', '#880088', '#888800', 
@@ -19,11 +21,11 @@ colors = [
 		'#00FF88', '#88FF00', '#FF8800',
 		'#000000']
 
-#term item
-def plot_series( data, filename, cmds, g = Gnuplot.Gnuplot( debug=0)):
+def plot_series( data, filename, title, cmds=[], g = Gnuplot.Gnuplot( debug=0)):
 	g( "set terminal svg")
 	g( "set output '%s'" % filename)
 	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
+	g( "set title '%s'" % title)
 
 	for cmd in cmds:
 		g( cmd)
@@ -31,12 +33,195 @@ def plot_series( data, filename, cmds, g = Gnuplot.Gnuplot( debug=0)):
 	plots = []
 	i = 0
 	for name, series in data.iteritems():
-		print "lines linecolor rgb '%s'" % colors[ i % len( colors)]
 		plots.append( Gnuplot.PlotItems.Data( series,
 			with_="lines linecolor rgb '%s'" % colors[ i % len( colors)], title=str(name)))
 		i += 1
 
 	g.plot( *plots)
+
+
+def plot_histogram( data, filename, title, cmds=[], g = Gnuplot.Gnuplot( debug=0)):
+	histogram = []
+	for key, value in data.iteritems():
+		pl = Gnuplot.PlotItems.Data( value, title=str( key))
+		histogram.append( pl)
+
+	#histogram
+	g( "reset")
+	g( "set terminal svg")
+	g( "set output '%s'" % filename)
+	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
+	g( "set title '%s'" % title)
+	g( "set style data histograms")
+	g( "set style histogram rowstacked")
+	g( "set style fill solid border -1")
+	g( "set key invert reverse Left outside")
+
+	for cmd in cmds:
+		g( cmd)
+
+	g.plot(	*histogram)
+
+	g.close()
+
+def plot_histogram_percentage( data, filename, title, discarded, cmds=[], g = Gnuplot.Gnuplot( debug=0)):
+	histogram = []
+
+	sigma = float( discarded)
+
+	sigma = None
+	n_samples = 0
+	for key, values in data.iteritems():
+		if sigma is None:
+			n_samples = len( values)
+			sigma = [ 0.0] * n_samples
+
+		if len( values) != n_samples:
+			print "Graphing Error: invalid number of samples in plot_histogram_percentage"
+			return
+
+		for i in range( n_samples):
+			sigma[ i] += values[i]
+
+	others = [100.0] * n_samples
+	percentage = [ 0.0] * n_samples
+	for key, values in sorted( data.iteritems(), key=lambda (key, value): value, reverse=True)[0:16]:
+		#over all samples
+		for i in range( n_samples):
+			percentage[i] = values[i] * 100.0 / sigma[i]
+			others[i] -= percentage[i]
+
+		#give gnuplot the category key
+		if n_samples == 1:
+			pl = Gnuplot.PlotItems.Data( percentage, title=("%s (%.2f%%)" % (str( key), percentage[0])))
+		else:
+			pl = Gnuplot.PlotItems.Data( percentage, title=str( key))
+		histogram.append( pl)
+
+	#others category
+	if n_samples == 1:
+		pl = Gnuplot.PlotItems.Data( others, title="others")
+	else:
+		pl = Gnuplot.PlotItems.Data( others, title="others")
+
+	histogram.append( pl)
+	histogram.reverse()
+
+	#actual gnuplot stuff
+	g( "reset")
+	g( "set terminal svg")
+	g( "set output '%s'" % filename)
+	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
+	g( "set yrange [0:100]")
+	g( "set ylabel 'Runtime Percentage'")
+	g( "set title '%s'" % title)
+	g( "set style data histograms")
+	g( "set style histogram rowstacked")
+	g( "set style fill solid border -1")
+	g( "set key invert reverse Left outside")
+
+	for cmd in cmds:
+		g( cmd)
+
+	g.plot(	*histogram)
+
+	g.close()
+
+### oprofile ###
+
+def plot_oprofile_percentage( prefix, rows, key, title_prefix, discarded):
+	rows = sorted( rows, key=lambda row: row[key])
+
+	data = {}
+	for row in rows:
+		data[ row["symbol_name"]] = float( row[key])
+
+	plot_histogram_percentage( data, "%s_sym.svg" % prefix, "%s (Symbol Names)" % title_prefix, discarded)
+
+	apps = {}
+	for row in rows:
+		if row["app_name"] not in apps:
+			apps[ row["app_name"]] = 0.0
+
+		apps[row["app_name"]] += row[key]
+
+	data = {}
+	for app, usage in sorted( apps.iteritems(), key=operator.itemgetter(1)):
+		data[ app] = float( usage)
+
+	plot_histogram_percentage( data, "%s_app.svg" % prefix, "%s (App Names)" % title_prefix, discarded)
+
+def plot_oprofile( test_dir, data):
+	n_cpu = data[ "n_cpu"]
+	rows = data[ "rows"]
+	#separate plot 
+	for cpu in range( n_cpu):
+		plot_oprofile_percentage( "%s/cpu_%d" % (test_dir, cpu), rows, "samples_cpu%d" % cpu, "Total Runtime CPU %d" % cpu, 0)
+
+	plot_oprofile_percentage( "%s/cpu_aggregate" % test_dir, rows, "samples_aggregate", "Total Runtime Aggregate", 0)
+
+def plot_lock_stat( test_dir, samples):
+	data = {}
+	for (class_name, lock_class) in samples[-1].iteritems():
+		data[ class_name] = lock_class[ "waittime-total"]
+	plot_histogram_percentage( data, "%s/lockstat_waititme.svg" % test_dir, "Waittime Total", 0)
+
+	data = {}
+	for (class_name, lock_class) in samples[-1].iteritems():
+		data[ class_name] = lock_class[ "holdtime-total"]
+	plot_histogram_percentage( data, "%s/lockstat_holdtime.svg" % test_dir, "Waittime Total", 0)
+
+	#determine top n
+	top_names = []
+	for key, value in samples[-1].iteritems():
+		top_names.append( value)
+
+	top_names = sorted( top_names, key=lambda x: x["waittime-total"], reverse = True)
+	
+	#actual plot
+	data = {}
+	for lock_class in top_names[0:8]:
+		series = []
+		for i in range( len( samples) - 1):
+			if lock_class["name"] in samples[i]:
+				t = ( samples[i+1][ lock_class["name"]]["waittime-total"] - 
+					samples[i][ lock_class["name"]]["waittime-total"]   )
+			else:
+				t = 0.0
+
+			series.append( (i / float( sample_rate), t))
+
+		data[ lock_class["name"]] = series
+
+	cmds = [	"set key outside",
+			"set key bottom right",
+			"set key horizontal",
+			"set key bmargin",
+			"set xlabel 'runtime ( sec)'",
+			"set ylabel 'usec/s'"]
+
+	plot_series( data, "%s/lockstat_waittime_top.svg" % test_dir, 'Waittime Top', cmds)
+	plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
+
+### lockstat ###
+
+def plot_lockstat_series( stat, cpu, filename, title):
+	data = {}
+	for key, value in stat[0][cpu].iteritems():
+		data[ key] = []
+
+	for t in range( len( stat) - 1):
+		for key, value in data.iteritems():
+			value.append( stat[t + 1][cpu][key] - stat[t][cpu][key])
+
+	#plot_histogram_percentage( data, filename, title, 0)
+	cmds = [	"set key outside",
+			"set key bottom right",
+			"set key horizontal",
+			"set key bmargin",
+			"set xlabel 'runtime ( sec)'",
+			"set ylabel 'Runtime %'"]
+	plot_series( data, filename, title, cmds)
 
 #term item
 def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
@@ -136,189 +321,7 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 
 		g.close()
 
-def plot_histogram( data, filename, title):
-	histogram = []
-	for key, value in data.iteritems():
-		pl = Gnuplot.PlotItems.Data( value, title=str( key))
-		histogram.append( pl)
-
-	#histogram
-	g = Gnuplot.Gnuplot( debug=0)
-	g( "reset")
-	g( "set terminal svg")
-	g( "set output '%s'" % filename)
-	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
-	g( "set yrange [0:100]")
-	g( "set ylabel 'Runtime Percentage'")
-	g( "set title '%s'" % title)
-	g( "set style data histograms")
-	g( "set style histogram rowstacked")
-	g( "set style fill solid border -1")
-	g( "set key invert reverse Left outside")
-	g.plot(	*histogram)
-
-	g.close()
-
-def plot_histogram_percentage( data, filename, title, discarded):
-	histogram = []
-
-	sigma = float( discarded)
-
-	print filename
-	sigma = None
-	n_samples = 0
-	for key, values in data.iteritems():
-		if sigma is None:
-			n_samples = len( values)
-			sigma = [ 0.0] * n_samples
-
-		if len( values) != n_samples:
-			print "Graphing Error: invalid number of samples in plot_histogram_percentage"
-			print data
-			print key
-			print value
-			print n_samples
-			return
-
-		for i in range( n_samples):
-			sigma[ i] += values[i]
-
-	others = [100.0] * n_samples
-	percentage = [ 0.0] * n_samples
-	for key, values in sorted( data.iteritems(), key=lambda (key, value): value, reverse=True)[0:16]:
-		#over all samples
-		for i in range( n_samples):
-			percentage[i] = values[i] * 100.0 / sigma[i]
-			others[i] -= percentage[i]
-
-		#give gnuplot the category key
-		print str( key)
-		print percentage
-		if n_samples == 1:
-			pl = Gnuplot.PlotItems.Data( percentage, title=("%s (%.2f%%)" % (str( key), percentage[0])))
-		else:
-			pl = Gnuplot.PlotItems.Data( percentage, title=str( key))
-		histogram.append( pl)
-
-	#others category
-	if n_samples == 1:
-		pl = Gnuplot.PlotItems.Data( others, title="others")
-	else:
-		pl = Gnuplot.PlotItems.Data( others, title="others")
-
-	histogram.append( pl)
-	histogram.reverse()
-
-	#actual gnuplot stuff
-	g = Gnuplot.Gnuplot( debug=0)
-	g( "reset")
-	g( "set terminal svg")
-	g( "set output '%s'" % filename)
-	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
-	g( "set yrange [0:100]")
-	g( "set ylabel 'Runtime Percentage'")
-	g( "set title '%s'" % title)
-	g( "set style data histograms")
-	g( "set style histogram rowstacked")
-	g( "set style fill solid border -1")
-	g( "set key invert reverse Left outside")
-	g.plot(	*histogram)
-
-	g.close()
-
-def plot_oprofile_percentage( prefix, rows, key, title_prefix, discarded):
-	rows = sorted( rows, key=lambda row: row[key])
-
-	data = {}
-	for row in rows:
-		data[ row["symbol_name"]] = float( row[key])
-
-	plot_histogram_percentage( data, "%s_sym.svg" % prefix, "%s (Symbol Names)" % title_prefix, discarded)
-
-	apps = {}
-	for row in rows:
-		if row["app_name"] not in apps:
-			apps[ row["app_name"]] = 0.0
-
-		apps[row["app_name"]] += row[key]
-
-	data = {}
-	for app, usage in sorted( apps.iteritems(), key=operator.itemgetter(1)):
-		data[ app] = float( usage)
-
-	plot_histogram_percentage( data, "%s_app.svg" % prefix, "%s (App Names)" % title_prefix, discarded)
-
-def plot_oprofile( test_dir, data):
-	n_cpu = data[ "n_cpu"]
-	rows = data[ "rows"]
-	#separate plot 
-	for cpu in range( n_cpu):
-		plot_oprofile_percentage( "%s/cpu_%d" % (test_dir, cpu), rows, "samples_cpu%d" % cpu, "Total Runtime CPU %d" % cpu, 0)
-
-	plot_oprofile_percentage( "%s/cpu_aggregate" % test_dir, rows, "samples_aggregate", "Total Runtime Aggregate", 0)
-
-def plot_lock_stat( test_dir, samples):
-	data = {}
-	for (class_name, lock_class) in samples[-1].iteritems():
-		data[ class_name] = lock_class[ "waittime-total"]
-	plot_histogram_percentage( data, "%s/lockstat_waititme.svg" % test_dir, "Waittime Total", 0)
-
-	data = {}
-	for (class_name, lock_class) in samples[-1].iteritems():
-		data[ class_name] = lock_class[ "holdtime-total"]
-	plot_histogram_percentage( data, "%s/lockstat_holdtime.svg" % test_dir, "Waittime Total", 0)
-
-	#determine top n
-	top_names = []
-	for key, value in samples[-1].iteritems():
-		top_names.append( value)
-
-	top_names = sorted( top_names, key=lambda x: x["waittime-total"], reverse = True)
-	
-	#actual plot
-	data = {}
-	for lock_class in top_names[0:8]:
-		series = []
-		for i in range( len( samples) - 1):
-			if lock_class["name"] in samples[i]:
-				t = ( samples[i+1][ lock_class["name"]]["waittime-total"] - 
-					samples[i][ lock_class["name"]]["waittime-total"]   )
-			else:
-				t = 0.0
-
-			series.append( (i / float( sample_rate), t))
-
-		data[ lock_class["name"]] = series
-
-	cmds = [	"set key outside",
-			"set title 'Waittime Top'",
-			"set key bottom right",
-			"set key horizontal",
-			"set key bmargin",
-			"set xlabel 'runtime ( sec)'",
-			"set ylabel 'usec/s'"]
-
-	plot_series( data, "%s/lockstat_waittime_top.svg" % test_dir, cmds)
-	plot_topn_detailed( samples, 2, "waittime-total", 8, sys.argv[1])
-
-def plot_lockstat_series( stat, cpu, filename, title):
-	data = {}
-	for key, value in stat[0][cpu].iteritems():
-		data[ key] = []
-
-	for t in range( len( stat) - 1):
-		for key, value in data.iteritems():
-			value.append( stat[t + 1][cpu][key] - stat[t][cpu][key])
-
-	#plot_histogram_percentage( data, filename, title, 0)
-	cmds = [	"set key outside",
-			"set title '%s'" % title,
-			"set key bottom right",
-			"set key horizontal",
-			"set key bmargin",
-			"set xlabel 'runtime ( sec)'",
-			"set ylabel 'Runtime %'"]
-	plot_series( data, filename, cmds)
+### stat ###
 
 def plot_stat( test_dir, stat):
 	#aggregate sampled
@@ -338,7 +341,10 @@ def plot_stat( test_dir, stat):
 
 
 	#aggregated
-	plot_histogram_percentage( data, "%s/stat_percpu.svg" % test_dir, "Stat per CPU", 0)
+	cmds = [ "set xrange [0:10]"]
+	plot_histogram_percentage( data, "%s/stat_percpu.svg" % test_dir, "Stat per CPU", 0, cmds)
+
+### disktats ###
 
 def plot_diskstats( test_dir, diskstats):
 	#aggregate sampled
@@ -358,14 +364,13 @@ def plot_diskstats( test_dir, diskstats):
 			#normalize
 			data[ "read"].append( ((t / sample_rate), read * sample_rate))
 			data[ "write"].append( ((t / sample_rate), write * sample_rate))
-		print name
-		print data
+
 		cmds = [	"set key outside",
 				"set title 'Sectors Reading/Writing %s'" % name,
-				"set xlabel 'runtime ( sec)'",
+				"set xlabel 'Runtime ( sec)'",
 				"set ylabel 'Sectors/s'"]
 
-		plot_series( data, "%s/diskstats_sectors_%s_io.svg" % ( test_dir, name), cmds)
+		plot_series( data, "%s/diskstats_sectors_%s_io.svg" % ( test_dir, name), "Sectors Reading/Writing %s" % name, cmds)
 
 if __name__ == "__main__":
 	if len( sys.argv) != 2:
