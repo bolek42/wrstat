@@ -72,7 +72,7 @@ begin_t=`date +%H-%M-%S`
 
 #command line
 echo eval $cmd
-eval $cmd $i &> "$test_dir/user_output"
+eval $cmd $i > "$test_dir/output"
 
 end_t=`date +%H-%M-%S`
 ##############
