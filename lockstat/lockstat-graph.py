@@ -8,7 +8,7 @@ import operator
 import pickle
 import Gnuplot, Gnuplot.funcutils
 
-sample_rate = 2.0
+sample_rate = 1.0
 
 ### GNUPlot ###
 colors = [ 	
@@ -206,24 +206,6 @@ def plot_lock_stat( test_dir, samples):
 
 ### lockstat ###
 
-def plot_lockstat_series( stat, cpu, filename, title):
-	data = {}
-	for key, value in stat[0][cpu].iteritems():
-		data[ key] = []
-
-	for t in range( len( stat) - 1):
-		for key, value in data.iteritems():
-			value.append( stat[t + 1][cpu][key] - stat[t][cpu][key])
-
-	#plot_histogram_percentage( data, filename, title, 0)
-	cmds = [	"set key outside",
-			"set key bottom right",
-			"set key horizontal",
-			"set key bmargin",
-			"set xlabel 'runtime ( sec)'",
-			"set ylabel 'Runtime %'"]
-	plot_series( data, filename, title, cmds)
-
 #term item
 def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 	#determine top n
@@ -323,10 +305,27 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 		g.close()
 
 ### stat ###
+def plot_stat_series( stat, cpu, filename, title):
+	data = {}
+	for key, value in stat[0][cpu].iteritems():
+		data[ key] = []
+
+	for t in range( len( stat) - 1):
+		for key, value in data.iteritems():
+			value.append( ( t / sample_rate, stat[t + 1][cpu][key] - stat[t][cpu][key]))
+
+	cmds = [	"set key outside",
+			"set key bottom right",
+			"set key horizontal",
+			"set key bmargin",
+			"set xlabel 'runtime ( sec)'",
+			"set ylabel 'Runtime %'"]
+	plot_series( data, filename, title, cmds)
+
 
 def plot_stat( test_dir, stat):
 	#aggregate sampled
-	plot_lockstat_series( stat, "cpu", "%s/stat_aggreagted_sampled.svg" % test_dir, "Stat aggreagted sampled")
+	plot_stat_series( stat, "cpu", "%s/stat_aggreagted_sampled.svg" % test_dir, "Stat aggreagted sampled")
 
 	#per cpu aggregated
 	data = {}
@@ -338,11 +337,11 @@ def plot_stat( test_dir, stat):
 			value.append( stat[-1]["cpu%d" % cpu][key] - stat[0]["cpu%d" % cpu][key])
 
 		#per cpu sampled
-		plot_lockstat_series( stat, "cpu%d" % cpu, "%s/stat_cpu%d_sampled.svg" % ( test_dir, cpu), "Stat CPU %d sampled" % cpu)
+		plot_stat_series( stat, "cpu%d" % cpu, "%s/stat_cpu%d_sampled.svg" % ( test_dir, cpu), "Stat CPU %d sampled" % cpu)
 	
 
 	#aggregated
-	cmds = [ "set xrange [-0.5:%.1f]" % (stat[0]["n_cpu"] - 0.5), #FIXME
+	cmds = [ "set xrange [-0.5:%.1f]" % (stat[0]["n_cpu"] - 0.5),
 			"set xtics 1",
 			"set xlabel 'CPU'"]
 	plot_histogram_percentage( data, "%s/stat_percpu.svg" % test_dir, "Stat per CPU", 0, cmds)
@@ -358,6 +357,7 @@ def plot_diskstats( test_dir, diskstats):
 		if device[ "sectors-read"] + device[ "sectors-write"] > 0:
 			names.append( name)
 
+	print sample_rate
 	for name in names:
 		data = { "read" : [], "write" : []}
 		for t in range( len( diskstats) - 1):
@@ -379,6 +379,15 @@ if __name__ == "__main__":
 	if len( sys.argv) != 2:
 		print "usage: %s test_dir oprofile_filter1 ...(filtering not implemented)" % sys.argv[0]
 		exit(1)
+
+	#read samplerate from config
+	file = open( "%s/lockstat.config" % sys.argv[1], "r")
+	raw = list( csv.reader( file, delimiter=' '))
+	rows = map( lambda row: filter(lambda s: s != '', row), raw)
+	for row in rows:
+		if row[0].lower() == "samprate":
+			sample_rate = float( row[1])
+	print sample_rate
 
 	# load samples
 	f = open( "%s/samples.pickle" % sys.argv[1], 'r')

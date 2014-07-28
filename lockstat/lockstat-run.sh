@@ -35,6 +35,7 @@ if [ ! -d "$test_dir" ]; then
 	echo "ERROR: failed to created $test_dir directory."
 	exit 0
 fi
+cp "$tool_path/lockstat.config" "$test_dir/lockstat.config"
 
 echo "$cmd" > "$test_dir/cmd"
 
@@ -63,7 +64,7 @@ sudo opcontrol --start --vmlinux="$vmlinux" --session-dir="$test_dir/oprofile_da
 sample_dir="$test_dir/samples"
 mkdir -p "$sample_dir"
 rm -f "$sample_dir"/*
-sudo python "$tool_path/lockstat-sampling-deamon.py" "$sample_dir" $procfiles&
+sudo python "$tool_path/lockstat-sampling-deamon.py" "$test_dir" $procfiles&
 sampling_deamon_pid=$!
 
 ##############
@@ -95,7 +96,5 @@ sudo chown -R $user:$group "$test_dir"
 find "$test_dir" -type d -exec chmod 755 {} \;
 find "$test_dir" -type f -exec chmod 644 {} \;
 
-sudo cat /proc/lock_stat > "$test_dir/lock_stat"
-
-python "$tool_path/lockstat-parser.py" "$sample_dir" "$test_dir/samples.pickle"
+python "$tool_path/lockstat-parser.py" "$test_dir"
 python "$tool_path/lockstat-graph.py" "$test_dir"

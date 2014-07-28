@@ -3,6 +3,9 @@ import os
 import sys
 import csv
 import pickle
+import csv
+
+sample_rate = 1.0
 
 #TODO large try except blocks instead of if ;)
 ############## diskstats ##############
@@ -196,12 +199,20 @@ def read_oprofile( filename):
 
 ## actual main ##
 if __name__ == "__main__":
-	if len( sys.argv) != 3:
-		print "usage: %s sample_path sample_file.pickle" % sys.argv[0]
+	if len( sys.argv) != 2:
+		print "usage: %s test_dir" % sys.argv[0]
 		exit(1)
 
-	sample_path = sys.argv[1]
-	sample_file = sys.argv[2]
+	sample_path = "%s/samples" % sys.argv[1]
+	sample_file = "%s/samples.pickle" % sys.argv[1]
+
+	#read samplerate from config
+	file = open( "%s/lockstat.config" % sys.argv[1], "r")
+	raw = list( csv.reader( file, delimiter=' '))
+	rows = map( lambda row: filter(lambda s: s != '', row), raw)
+	for row in rows:
+		if row[0].lower() == "samprate":
+			sample_rate = float( row[1])
 
 	#FIXME ugly
 	files = []
