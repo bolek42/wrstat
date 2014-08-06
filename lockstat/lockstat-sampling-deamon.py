@@ -10,7 +10,6 @@ path = ""
 t = 0
 sample_rate = 1.0
 
-#FIXME buffering because of diskio lags
 def capture():
 	global t
 	snapshot = {}
