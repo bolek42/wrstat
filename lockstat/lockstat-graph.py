@@ -3,7 +3,6 @@
 import os
 import sys
 import csv
-import numpy
 import operator
 import pickle
 import Gnuplot, Gnuplot.funcutils
@@ -21,7 +20,9 @@ colors = [
 		'#00FF88', '#88FF00', '#FF8800',
 		'#000000']
 
-def plot_series( data, filename, title, cmds=[], g = Gnuplot.Gnuplot( debug=0)):
+def plot_series( data, filename, title, cmds=[], g = None):
+	if g is None:
+		g = Gnuplot.Gnuplot( debug=0)
 	g( "set terminal svg")
 	g( "set output '%s'" % filename)
 	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
@@ -40,13 +41,15 @@ def plot_series( data, filename, title, cmds=[], g = Gnuplot.Gnuplot( debug=0)):
 	g.plot( *plots)
 
 
-def plot_histogram( data, filename, title, cmds=[], g = Gnuplot.Gnuplot( debug=0)):
+def plot_histogram( data, filename, title, cmds=[], g = None):
 	histogram = []
 	for key, value in data.iteritems():
 		pl = Gnuplot.PlotItems.Data( value, title=str( key))
 		histogram.append( pl)
 
 	#histogram
+	if g is None:
+		g = Gnuplot.Gnuplot( debug=0)
 	g( "reset")
 	g( "set terminal svg")
 	g( "set output '%s'" % filename)
@@ -64,7 +67,7 @@ def plot_histogram( data, filename, title, cmds=[], g = Gnuplot.Gnuplot( debug=0
 
 	g.close()
 
-def plot_histogram_percentage( data, filename, title, discarded, cmds=[], g = Gnuplot.Gnuplot( debug=0)):
+def plot_histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
 	histogram = []
 
 	sigma = float( discarded)
@@ -108,6 +111,8 @@ def plot_histogram_percentage( data, filename, title, discarded, cmds=[], g = Gn
 	histogram.reverse()
 
 	#actual gnuplot stuff
+	if g is None:
+		g = Gnuplot.Gnuplot( debug=0)
 	g( "reset")
 	g( "set terminal svg")
 	g( "set output '%s'" % filename)
@@ -137,6 +142,7 @@ def plot_oprofile_percentage( prefix, rows, key, title_prefix, discarded):
 	for row in rows:
 		data[ row["symbol_name"]] = float( row[key])
 
+	cmds = [ "unset xtics"]
 	plot_histogram_percentage( data, "%s_sym.svg" % prefix, "%s (Symbol Names)" % title_prefix, discarded)
 
 	apps = {}
@@ -164,13 +170,15 @@ def plot_oprofile( test_dir, data):
 def plot_lock_stat( test_dir, samples):
 	data = {}
 	for (class_name, lock_class) in samples[-1].iteritems():
-		data[ class_name] = lock_class[ "waittime-total"]
-	plot_histogram_percentage( data, "%s/lockstat_waititme.svg" % test_dir, "Waittime Total", 0)
+		data[ class_name] = [ lock_class[ "waittime-total"]]
+	cmds = [ "unset xtics"]
+	plot_histogram_percentage( data, "%s/lockstat_waititme.svg" % test_dir, "Waittime Total", 0, cmds)
 
 	data = {}
 	for (class_name, lock_class) in samples[-1].iteritems():
-		data[ class_name] = lock_class[ "holdtime-total"]
-	plot_histogram_percentage( data, "%s/lockstat_holdtime.svg" % test_dir, "Waittime Total", 0)
+		data[ class_name] = [ lock_class[ "holdtime-total"]]
+	cmds = [ "unset xtics"]
+	plot_histogram_percentage( data, "%s/lockstat_holdtime.svg" % test_dir, "Holdtime Total", 0, cmds)
 
 	#determine top n
 	top_names = []

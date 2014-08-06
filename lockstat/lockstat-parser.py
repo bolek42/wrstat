@@ -39,35 +39,32 @@ def diskstats_read( filename):
 	return devices
 
 ############## lockstat ##############
-def lockstat_parse_lock_class( row):
-	if len( row) < 11:
+def lockstat_parse_lock_class( row, keys):
+	if len( row) <= len( keys):
 		print "invalid usage row"
 		return None
 
-	lockname = " ".join( row[ 0 : len( row) - 11 + 1])[0:-1]
-	data = row[ len( row) - 11 + 1 ::]
+	lockname = row[ 0 : len( row) - len( keys)]
+	lockname = " ".join( lockname)
+	lockname = lockname[0:-1]
+
+	data = row[ len( row) - len( keys) ::]
+
 	usage = {}
 	usage[ "name"] = lockname
 	usage[ "read-locks"] = []
 	usage[ "write-locks"] = []
-	usage[ "con-bounces"] = int( data[0])
-	usage[ "contentions"] = int( data[1])
-	usage[ "waittime-min"] = float( data[2])
-	usage[ "waittime-max"] = float( data[3])
-	usage[ "waittime-total"] = float( data[4])
-	usage[ "acq-bounces"] = int( data[5])
-	usage[ "acquisitions"] = int( data[6])
-	usage[ "holdtime-min"] = float( data[7])
-	usage[ "holdtime-max"] = float( data[8])
-	usage[ "holdtime-total"] = float( data[9])
+
+	for key, value in zip(keys, data):
+		usage[ key] = float( value)
 		
 	return usage
 
-def lockstat_parse_lock( row):
+def lockstat_parse_lock( row, offset):
 	lock = {}
-	lock[ "con-bounces"] = int( row[1])
-	lock[ "addr"] = row[2]
-	lock[ "symbol"] = row[3]
+	lock[ "con-bounces"] = int( row[offset])
+	lock[ "addr"] = row[offset + 1]
+	lock[ "symbol"] = row[offset + 2]
 
 	return lock
 
@@ -75,9 +72,15 @@ def lockstat_read( filename):
 	file = open( filename, "r")
 
 	raw = list( csv.reader( file, delimiter=' '))
-	raw = raw[ 4::] #discard version and header
-	#remove whitespaces and empty lines
-	rows = map( lambda row: filter(lambda s: s != '', row), raw)
+	#remove whitespaces and empty
+	raw = map( lambda row: filter(lambda s: s != '', row), raw)
+	#lines discard version and header
+	rows = raw[ 4::] 
+
+	#read keys from header line
+	keys = []
+	for k in raw[2][2:]:
+		keys.append( k)
 
 	lock_classes = {}
 	#to track the type of the current row we use a simple DFA
@@ -94,15 +97,17 @@ def lockstat_read( filename):
 		elif len(row) == 1 and row[0][0] == '.':
 			state = "lock_class"
 		elif state == "lock_class":
-			lock_class = lockstat_parse_lock_class( row)
+			lock_class = lockstat_parse_lock_class( row, keys)
 			if not( lock_class is None):
 				lock_classes.update( { lock_class["name"] : lock_class})
 		elif state == "read_lock":
-			lock = lockstat_parse_lock( row)
+			name_offset = lock_class["name"].count( ' ')  + 1
+			lock = lockstat_parse_lock( row, name_offset)
 			if not( lock is None):
 				lock_class["read-locks"].append( lock)
 		elif state == "write_lock":
-			lock = lockstat_parse_lock( row)
+			name_offset = lock_class["name"].count( ' ')  + 1
+			lock = lockstat_parse_lock( row, name_offset)
 			if not( lock is None):
 				lock_class["write-locks"].append( lock)
 
