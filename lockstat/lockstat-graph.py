@@ -312,14 +312,21 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 		g.close()
 
 ### stat ###
+
 def plot_stat_series( stat, cpu, filename, title):
 	data = {}
 	for key, value in stat[0][cpu].iteritems():
 		data[ key] = []
 
 	for t in range( len( stat) - 1):
+		#FIXME
+		sigma = 0.0
 		for key, value in data.iteritems():
-			value.append( ( t / sample_rate, stat[t + 1][cpu][key] - stat[t][cpu][key]))
+			sigma += stat[t + 1][cpu][key] - stat[t][cpu][key]
+		sigma /= 100.0
+
+		for key, value in data.iteritems():
+			value.append( ( t / sample_rate, (stat[t + 1][cpu][key] - stat[t][cpu][key]) / sigma))
 
 	cmds = [	"set key outside",
 			"set key bottom right",
@@ -380,7 +387,7 @@ def plot_diskstats( test_dir, diskstats):
 				"set xlabel 'Runtime ( sec)'",
 				"set ylabel 'Sectors/s'"]
 
-		plot_series( data, "%s/diskstats_sectors_%s_io.svg" % ( test_dir, name), "Sectors Reading/Writing %s" % name, cmds)
+		plot_series( data, "%s/diskstats_sectors_%s.svg" % ( test_dir, name), "Sectors Reading/Writing %s" % name, cmds)
 
 if __name__ == "__main__":
 	if len( sys.argv) != 2:
