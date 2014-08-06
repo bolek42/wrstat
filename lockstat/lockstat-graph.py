@@ -137,10 +137,9 @@ def plot_histogram_percentage( data, filename, title, discarded, cmds=[], g = No
 
 def plot_oprofile_percentage( prefix, rows, key, title_prefix, discarded):
 	rows = sorted( rows, key=lambda row: row[key])
-	print "foooooooO"
 	data = {}
 	for row in rows:
-		data[ row["symbol_name"]] = float( row[key])
+		data[ row["symbol_name"]] = [float( row[key])]
 
 	cmds = [ "unset xtics"]
 	plot_histogram_percentage( data, "%s_sym.svg" % prefix, "%s (Symbol Names)" % title_prefix, discarded)
@@ -154,7 +153,7 @@ def plot_oprofile_percentage( prefix, rows, key, title_prefix, discarded):
 
 	data = {}
 	for app, usage in sorted( apps.iteritems(), key=operator.itemgetter(1)):
-		data[ app] = float( usage)
+		data[ app] = [float( usage)]
 
 	plot_histogram_percentage( data, "%s_app.svg" % prefix, "%s (App Names)" % title_prefix, discarded)
 

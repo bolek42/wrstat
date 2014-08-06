@@ -89,7 +89,7 @@ if [ "$(which opcontrol 2>/dev/null)" != "" ]; then
 	sudo opcontrol --dump
 	sudo opcontrol --shutdown
 	#opreport --session-dir="$test_dir/oprofile_data/" -p $kernel_mod -l > "$test_dir/oprof_results"
-	opreport --session-dir="$test_dir/oprofile_data/" -l > "$test_dir/oprof_results"
+	opreport --session-dir="$test_dir/oprofile_data/" -l > "$test_dir/samples/oprofile"
 fi
 
 user=$USER
