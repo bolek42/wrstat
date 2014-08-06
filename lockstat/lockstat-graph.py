@@ -137,7 +137,7 @@ def plot_histogram_percentage( data, filename, title, discarded, cmds=[], g = No
 
 def plot_oprofile_percentage( prefix, rows, key, title_prefix, discarded):
 	rows = sorted( rows, key=lambda row: row[key])
-
+	print "foooooooO"
 	data = {}
 	for row in rows:
 		data[ row["symbol_name"]] = float( row[key])
