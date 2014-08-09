@@ -113,6 +113,7 @@ def plot_histogram_percentage( data, filename, title, discarded, cmds=[], g = No
 	#actual gnuplot stuff
 	if g is None:
 		g = Gnuplot.Gnuplot( debug=0)
+
 	g( "reset")
 	g( "set terminal svg")
 	g( "set output '%s'" % filename)

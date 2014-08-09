@@ -58,8 +58,14 @@ fi
 #	sudo opcontrol --separate=none
 #fi
 rm -rf "$test_dir/oprofile_data/"
-sudo opcontrol --start --no-vmlinux --session-dir="$test_dir/oprofile_data/"
-#sudo opcontrol --start --vmlinux="$vmlinux" --session-dir="$test_dir/oprofile_data/"
+
+
+if [ "$vmlinux" == "" ]
+then
+	sudo opcontrol --start --no-vmlinux --session-dir="$test_dir/oprofile_data/"
+else
+	sudo opcontrol --start --vmlinux="$vmlinux" --session-dir="$test_dir/oprofile_data/"
+fi
 
 #sampling deamon for /proc files
 sample_dir="$test_dir/samples"

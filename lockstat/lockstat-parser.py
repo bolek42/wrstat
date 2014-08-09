@@ -1,9 +1,9 @@
 #!/usr/bin/python
 import os
+import re
 import sys
 import csv
 import pickle
-import csv
 
 sample_rate = 1.0
 
@@ -164,42 +164,42 @@ def stat_read( filename):
 ############## oprofile ##############
 def read_oprofile( filename):
 	file = open( filename, "r")
-	reader = csv.reader( file, delimiter=' ')
-	rows = []
-	n_cpu = -1
-	for line in reader:
-		data = []
+	raw = csv.reader( file, delimiter=' ')
+	rows = map( lambda row: filter(lambda s: s != '', row), raw)
 
-		#strip whitespaces
-		for element in line:
-			if element != '':
-				data.append( element)
-		if n_cpu == -1:
-			n_cpu = (len ( data) / 2) - 1
+	n_cpu = 0
+	data = []
+	for row in rows:
+		#skip header rows
+		if len( row) < 4 or not row[0].isdigit():
+			continue
+
+		if n_cpu == 0:
+			n_cpu = (len ( row) / 2) - 1
 
 		#process fields
-		row = dict()
-		i = 0
+		line = dict()
 		samples_aggregate = 0.0
 		runtime_aggregate = 0.0
 		for cpu in range( n_cpu):
-			sample = int( data[cpu * 2])
-			runtime = float( data[(cpu * 2) + 1])
-			row[ "samples_cpu%d" % cpu] = sample
-			row[ "runtime_cpu%d" % cpu] = runtime
+			sample = int( row[cpu * 2])
+			runtime = float( row[(cpu * 2) + 1])
+			line[ "samples_cpu%d" % cpu] = sample
+			line[ "runtime_cpu%d" % cpu] = runtime
 			samples_aggregate += sample
 			runtime_aggregate += runtime		
 
-		row[ "samples_aggregate"] = samples_aggregate
-		row[ "runtime_aggregate"] = runtime_aggregate
-		row[ "app_name"] = data[ 2 * n_cpu]
-		row[ "symbol_name"] = data[ 2 * n_cpu + 1]
+		line[ "samples_aggregate"] = samples_aggregate
+		line[ "runtime_aggregate"] = runtime_aggregate
+		line[ "app_name"] = row[ -2]
+		line[ "symbol_name"] = row[ -1]
 
-		rows.append( row)
-	data = {}
-	data[ "rows"] = rows
-	data[ "n_cpu"] = n_cpu
-	return data #returns n_cpu and data
+		data.append( line)
+
+	oprof = {}
+	oprof[ "rows"] = data
+	oprof[ "n_cpu"] = n_cpu
+	return oprof #returns n_cpu and data
 
 
 ## actual main ##
@@ -248,7 +248,8 @@ if __name__ == "__main__":
 		t += 1
 	#end of ugly
 	if "oprofile" in files:
-		samples[ "oprofile"] = read_oprofile( "%s/oprofile" % sample_path)
+		oprof = read_oprofile( "%s/oprofile" % sample_path)
+		samples[ "oprofile"] = oprof
 	
 	f = open( sample_file, "w")
 	pickle.dump( samples, f)
