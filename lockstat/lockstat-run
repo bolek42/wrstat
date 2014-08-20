@@ -43,7 +43,7 @@ sampling_deamon_pid=$!
 
 #running command
 echo eval $cmd
-eval $cmd $i > "$test_dir/output"
+eval $cmd &> "$test_dir/output"
 
 #deinit sampling deamon
 echo "killing sampling deamon..."
