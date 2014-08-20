@@ -135,7 +135,6 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 		g = graphing.init( "%s/top-%d.svg" % ( path, i))
 
 		g( "set multiplot title '%s'" % class_name)
-		g( "set title '%s' % class_name")
 
 		g( "set origin 0,0.45")
 		g( "set size 0.5,0.5")

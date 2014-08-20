@@ -110,9 +110,16 @@ def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
 
 	#others category
 	if n_samples == 1:
-		normalized[ "others (%.2f%%)" % others[0]] = others
+		if others[0] > 0.5:
+			normalized[ "others (%.2f%%)" % others[0]] = others
 	else:
-		normalized[ "others"] = others
+		show_others = False
+		for o in others:
+			if o > 0.5:
+				show_others = True
+
+		if show_others:
+			normalized[ "others"] = others
 
 	#actual gnuplot stuff
 	if g is None:
