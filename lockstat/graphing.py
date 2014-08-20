@@ -49,10 +49,14 @@ def series( data, filename, title, cmds=[], g = None):
 		{ "class 1" [ 1, 6, 2]
 		{ "class 2" [ 3, 5, 1]}
 """
-def histogram( data, filename, title, cmds=[], g = None):
+def histogram( data, filename, title, cmds=[], g = None, title_len=40):
 	histogram = []
 	for key, value in data.iteritems():
-		pl = Gnuplot.PlotItems.Data( value, title=str( key))
+		#truncate title
+		key = key[ 0: title_len]
+		key += " " * ( title_len - len( key))
+
+		pl = Gnuplot.PlotItems.Data( value, title=key)
 		histogram.append( pl)
 
 	#histogram
@@ -93,7 +97,6 @@ def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
 	percentage = [ 0.0] * n_samples
 	normalized = {}
 	for key, values in sorted( data.iteritems(), key=lambda (key, value): value, reverse=True)[0:16]:
-		print "##########################################################"
 		#over all samples
 		for i in range( n_samples):
 			percentage[i] = values[i] * 100.0 / sigma[i]
@@ -117,7 +120,6 @@ def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
 
 	g( "set yrange [0:100]")
 	g( "set ylabel 'Runtime Percentage'")
-	print normalized
 
 	histogram( normalized, "", title, cmds, g)
 
