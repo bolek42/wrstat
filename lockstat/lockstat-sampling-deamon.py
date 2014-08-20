@@ -11,11 +11,10 @@ modules = []
 t = 0
 sample_rate = 1.0
 test_dir = ""
+run = True
 
 def capture():
 	global t
-	global modules
-	global test_dir
 
 	threads = []
 	for modname, module in modules.iteritems():
@@ -24,22 +23,30 @@ def capture():
 		threads.append( thread)
 	t += 1
 
-	threading.Timer( 1.0/sample_rate, capture).start()
+	if run:
+		threading.Timer( 1.0/sample_rate, capture).start()
 
 	for thread in threads:
 		thread.join()
 
-	print "sample"
-
+	#print "sample"
 
 def signal_handler(signal, frame):
-	print "captured signal " + str( signal)
+	#print "captured signal " + str( signal)
 
-	print "running postcapture..."
+	print "captured %d samples" % t
+	print "running postsampling..."
 	for modname, module in modules.iteritems():
 		module.postsampling( test_dir)
 
-	sys.exit(0)
+	#stopping sampling deamon
+	global run
+	run = False
+
+	#waiting for all threads to exit
+	for thread in threading.enumerate():
+		if thread != threading.current_thread():
+			thread.join()
 
 if __name__ == "__main__":
 	if len( sys.argv) != 2:

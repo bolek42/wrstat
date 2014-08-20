@@ -14,7 +14,6 @@ def presampling( test_dir):
 
 def sample( test_dir, t):
 	pass
-	shutil.copy( "/proc/stat", "%s/samples/stat_%d" % ( test_dir, t))
 
 def postsampling( test_dir):
 	pass
