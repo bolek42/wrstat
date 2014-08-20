@@ -1,11 +1,19 @@
-#/proc/lockstat
+#/proc/lock_stat
 
 import os
 import csv
+import shutil
 
 import graphing
 
-name = "lock_stat"
+def presampling( test_dir):
+	pass
+
+def sample( test_dir, t):
+	shutil.copy( "/proc/lock_stat", "%s/samples/lock_stat_%d" % ( test_dir, t))
+
+def postsampling( test_dir):
+	pass
 
 def parse_lock_class( row, keys):
 	if len( row) <= len( keys):

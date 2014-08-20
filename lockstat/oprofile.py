@@ -1,10 +1,19 @@
 #oprofile
 import csv
 import operator
+import shutil
 
 import graphing
 
-name = "oprofile"
+def presampling( test_dir):
+	pass
+
+def sample( test_dir, t):
+	pass
+	shutil.copy( "/proc/stat", "%s/samples/stat_%d" % ( test_dir, t))
+
+def postsampling( test_dir):
+	pass
 
 def plot_histogram( prefix, rows, key, title_prefix, discarded):
 	rows = sorted( rows, key=lambda row: row[key])

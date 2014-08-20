@@ -13,7 +13,6 @@ done
 tool_path="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 vmlinux="$( cat "$tool_path/lockstat.config" | grep "vmlinux" | cut -d " "  -f 2-)"
-procfiles="$( cat "$tool_path/lockstat.config" | grep "procfiles" | cut -d " "  -f 2-)"
 kernel_mod="$( cat "$tool_path/lockstat.config" | grep "kernel_mod" | cut -d " "  -f 2-)"
 
 #parsing arguments
@@ -71,7 +70,7 @@ fi
 sample_dir="$test_dir/samples"
 mkdir -p "$sample_dir"
 rm -f "$sample_dir"/*
-sudo python "$tool_path/lockstat-sampling-deamon.py" "$test_dir" $procfiles&
+sudo python "$tool_path/lockstat-sampling-deamon.py" "$test_dir"&
 sampling_deamon_pid=$!
 
 ##############

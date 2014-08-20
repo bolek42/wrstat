@@ -2,10 +2,18 @@
 
 import os
 import csv
+import shutil
 
 import graphing
 
-name = "diskstats"
+def presampling( test_dir):
+	pass
+
+def sample( test_dir, t):
+	shutil.copy( "/proc/diskstats", "%s/samples/diskstats_%d" % ( test_dir, t))
+
+def postsampling( test_dir):
+	pass
 
 #TODO iostat
 def parse_sample( filename):

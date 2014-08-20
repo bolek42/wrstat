@@ -2,10 +2,18 @@
 
 import os
 import csv
+import shutil
 
 import graphing
 
-name = "stat"
+def presampling( test_dir):
+	pass
+
+def sample( test_dir, t):
+	shutil.copy( "/proc/stat", "%s/samples/stat_%d" % ( test_dir, t))
+
+def postsampling( test_dir):
+	pass
 
 def plot_stat_series( stat, cpu, filename, title, sample_rate):
 	data = {}
