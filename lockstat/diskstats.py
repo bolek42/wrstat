@@ -1,10 +1,15 @@
 # /proc/diskstats
+#TODO iostat
 
 import os
 import csv
 import shutil
 
 import graphing
+
+#########################################
+#       Sampling methods                #
+#########################################
 
 def presampling( test_dir):
 	pass
@@ -15,7 +20,23 @@ def sample( test_dir, t):
 def postsampling( test_dir):
 	pass
 
-#TODO iostat
+
+#########################################
+#       Parsing samples                 #
+#########################################
+
+def parse( test_dir):
+	t = 0
+	samples = []
+
+	while os.path.isfile( "%s/samples/diskstats_%d" % ( test_dir, t)):
+		sample = parse_sample( "%s/samples/diskstats_%d" % ( test_dir, t))
+		samples.append( sample)
+
+		t+= 1
+
+	return samples
+
 def parse_sample( filename):
 	file = open( filename, "r")
 
@@ -45,17 +66,10 @@ def parse_sample( filename):
 
 	return devices
 
-def parse( test_dir):
-	t = 0
-	samples = []
 
-	while os.path.isfile( "%s/samples/diskstats_%d" % ( test_dir, t)):
-		sample = parse_sample( "%s/samples/diskstats_%d" % ( test_dir, t))
-		samples.append( sample)
-
-		t+= 1
-
-	return samples
+#########################################
+#       Plotting data                   #
+#########################################
 
 def plot( test_dir, diskstats, sample_rate):
 	#aggregate sampled
@@ -80,4 +94,3 @@ def plot( test_dir, diskstats, sample_rate):
 				"set xlabel 'Runtime ( sec)'",
 				"set ylabel 'Sectors/s'"]
 
-		graphing.series( data, "%s/diskstats_sectors_%s_io.svg" % ( test_dir, name), "Sectors Reading/Writing %s" % name, cmds)

@@ -6,6 +6,10 @@ import shutil
 
 import graphing
 
+#########################################
+#       Sampling methods                #
+#########################################
+
 def presampling( test_dir):
 	pass
 
@@ -15,34 +19,22 @@ def sample( test_dir, t):
 def postsampling( test_dir):
 	pass
 
-def parse_lock_class( row, keys):
-	if len( row) <= len( keys):
-		print "invalid usage row"
-		return None
 
-	lockname = row[ 0 : len( row) - len( keys)]
-	lockname = " ".join( lockname)
-	lockname = lockname[0:-1]
+#########################################
+#       Parsing samples                 #
+#########################################
 
-	data = row[ len( row) - len( keys) ::]
+def parse( test_dir):
+	t = 0
+	samples = []
 
-	usage = {}
-	usage[ "name"] = lockname
-	usage[ "read-locks"] = []
-	usage[ "write-locks"] = []
+	while os.path.isfile( "%s/samples/lock_stat_%d" % ( test_dir, t)):
+		sample = parse_sample( "%s/samples/lock_stat_%d" % ( test_dir, t))
+		samples.append( sample)
 
-	for key, value in zip(keys, data):
-		usage[ key] = float( value)
-		
-	return usage
+		t+= 1
 
-def parse_lock( row, offset):
-	lock = {}
-	lock[ "con-bounces"] = int( row[offset])
-	lock[ "addr"] = row[offset + 1]
-	lock[ "symbol"] = row[offset + 2]
-
-	return lock
+	return samples
 
 def parse_sample( filename):
 	file = open( filename, "r")
@@ -90,17 +82,86 @@ def parse_sample( filename):
 	file.close()
 	return lock_classes
 
-def parse( test_dir):
-	t = 0
-	samples = []
+def parse_lock_class( row, keys):
+	if len( row) <= len( keys):
+		print "invalid usage row"
+		return None
 
-	while os.path.isfile( "%s/samples/lock_stat_%d" % ( test_dir, t)):
-		sample = parse_sample( "%s/samples/lock_stat_%d" % ( test_dir, t))
-		samples.append( sample)
+	lockname = row[ 0 : len( row) - len( keys)]
+	lockname = " ".join( lockname)
+	lockname = lockname[0:-1]
 
-		t+= 1
+	data = row[ len( row) - len( keys) ::]
 
-	return samples
+	usage = {}
+	usage[ "name"] = lockname
+	usage[ "read-locks"] = []
+	usage[ "write-locks"] = []
+
+	for key, value in zip(keys, data):
+		usage[ key] = float( value)
+		
+	return usage
+
+def parse_lock( row, offset):
+	lock = {}
+	lock[ "con-bounces"] = int( row[offset])
+	lock[ "addr"] = row[offset + 1]
+	lock[ "symbol"] = row[offset + 2]
+
+	return lock
+
+
+#########################################
+#       Plotting data                   #
+#########################################
+
+def plot( test_dir, samples, sample_rate):
+	data = {}
+	for (class_name, lock_class) in samples[-1].iteritems():
+		data[ class_name] = [ lock_class[ "waittime-total"]]
+	cmds = [ "unset xtics"]
+	graphing.histogram_percentage( data, "%s/lockstat_waititme.svg" % test_dir, "Waittime Total", 0, cmds)
+
+	data = {}
+	for (class_name, lock_class) in samples[-1].iteritems():
+		data[ class_name] = [ lock_class[ "holdtime-total"]]
+	cmds = [ "unset xtics"]
+	graphing.histogram_percentage( data, "%s/lockstat_holdtime.svg" % test_dir, "Holdtime Total", 0, cmds)
+
+	#determine top n
+	top_names = []
+	for key, value in samples[-1].iteritems():
+		top_names.append( value)
+
+	top_names = sorted( top_names, key=lambda x: x["waittime-total"], reverse = True)
+	
+	#actual plot
+	data = {}
+	for lock_class in top_names[0:8]:
+		series = []
+		for i in range( len( samples) - 1):
+			if lock_class["name"] in samples[i]:
+				t = ( samples[i+1][ lock_class["name"]]["waittime-total"] - 
+					samples[i][ lock_class["name"]]["waittime-total"]   )
+			else:
+				t = 0.0
+
+			series.append( (i / float( sample_rate), t))
+
+		data[ lock_class["name"]] = series
+
+	cmds = [	"set key outside",
+			"set key bottom right",
+			"set key horizontal",
+			"set key bmargin",
+			"set xlabel 'runtime ( sec)'",
+			"set ylabel 'usec/s'"]
+
+	graphing.series( data, "%s/lockstat_waittime_top.svg" % test_dir, 'Waittime Top', cmds)
+
+	#FIXME
+	plot_topn_detailed( samples, 2, "waittime-total", 8, test_dir)
 
 def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 	#determine top n
@@ -200,49 +261,3 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 
 		g.close()
 
-def plot( test_dir, samples, sample_rate):
-	data = {}
-	for (class_name, lock_class) in samples[-1].iteritems():
-		data[ class_name] = [ lock_class[ "waittime-total"]]
-	cmds = [ "unset xtics"]
-	graphing.histogram_percentage( data, "%s/lockstat_waititme.svg" % test_dir, "Waittime Total", 0, cmds)
-
-	data = {}
-	for (class_name, lock_class) in samples[-1].iteritems():
-		data[ class_name] = [ lock_class[ "holdtime-total"]]
-	cmds = [ "unset xtics"]
-	graphing.histogram_percentage( data, "%s/lockstat_holdtime.svg" % test_dir, "Holdtime Total", 0, cmds)
-
-	#determine top n
-	top_names = []
-	for key, value in samples[-1].iteritems():
-		top_names.append( value)
-
-	top_names = sorted( top_names, key=lambda x: x["waittime-total"], reverse = True)
-	
-	#actual plot
-	data = {}
-	for lock_class in top_names[0:8]:
-		series = []
-		for i in range( len( samples) - 1):
-			if lock_class["name"] in samples[i]:
-				t = ( samples[i+1][ lock_class["name"]]["waittime-total"] - 
-					samples[i][ lock_class["name"]]["waittime-total"]   )
-			else:
-				t = 0.0
-
-			series.append( (i / float( sample_rate), t))
-
-		data[ lock_class["name"]] = series
-
-	cmds = [	"set key outside",
-			"set key bottom right",
-			"set key horizontal",
-			"set key bmargin",
-			"set xlabel 'runtime ( sec)'",
-			"set ylabel 'usec/s'"]
-
-	graphing.series( data, "%s/lockstat_waittime_top.svg" % test_dir, 'Waittime Top', cmds)
-
-	#FIXME
-	plot_topn_detailed( samples, 2, "waittime-total", 8, test_dir)
