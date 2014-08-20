@@ -6,22 +6,28 @@ import csv
 import operator
 import pickle
 
-#custom
-import diskstats
-import lockstat
-import stat_foo as stat
-from graphing import * #FIXME
-import oprofile
-
 sample_rate = 1.0
 
-### oprofile ###
+import imp
 
-### lockstat ###
+def load_config( filename): 
+	#read samplerate from config
+	file = open( filename, "r")
+	raw = list( csv.reader( file, delimiter=' '))
+	rows = map( lambda row: filter(lambda s: s != '', row), raw)
 
-#term item
+	config = {}
+	for row in rows:
+		config[ row[0]] = row[ 1:]
 
-### stat ###
+	return config
+
+def load_modules( modnames):
+	modules = {}
+	for modname in modnames:
+		modules[ modname] =  imp.load_source( modname, "%s.py" % modname)
+
+	return modules
 
 if __name__ == "__main__":
 	if len( sys.argv) != 2:
@@ -29,22 +35,15 @@ if __name__ == "__main__":
 		exit(1)
 
 	#read samplerate from config
-	file = open( "%s/lockstat.config" % sys.argv[1], "r")
-	raw = list( csv.reader( file, delimiter=' '))
-	rows = map( lambda row: filter(lambda s: s != '', row), raw)
-	for row in rows:
-		if row[0].lower() == "samprate":
-			sample_rate = float( row[1])
+	config = load_config( "%s/lockstat.config" % sys.argv[1])
+	sample_rate = float( config[ "samprate"][0])
+	modules = load_modules( config[ "modules"])
 
 	# load samples
 	f = open( "%s/samples.pickle" % sys.argv[1], 'r')
 	samples = pickle.load( f)
 
-	if "lock_stat" in samples:
-		lockstat.plot( sys.argv[1], samples["lock_stat"], sample_rate)
-	if "diskstats" in samples:
-		diskstats.plot( sys.argv[1], samples["diskstats"], sample_rate)
-	if "stat" in samples:
-		stat.plot( sys.argv[1], samples["stat"], sample_rate)
-	if "oprofile" in samples:
-		oprofile.plot( sys.argv[1], samples["oprofile"], sample_rate)
+	for modname, module in modules.iteritems():
+		if modname in samples:
+			module.plot( sys.argv[1], samples[modname], sample_rate)
+			

@@ -3,7 +3,9 @@
 import csv
 
 import graphing
-#/proc/diskstats
+
+name = "diskstats"
+
 #TODO iostat
 def parse( filename):
 	file = open( filename, "r")

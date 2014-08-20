@@ -4,6 +4,8 @@ import operator
 
 import graphing
 
+name = "oprofile"
+
 def plot_histogram( prefix, rows, key, title_prefix, discarded):
 	rows = sorted( rows, key=lambda row: row[key])
 	data = {}

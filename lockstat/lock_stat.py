@@ -4,6 +4,8 @@ import csv
 
 import graphing
 
+name = "lock_stat"
+
 def parse_lock_class( row, keys):
 	if len( row) <= len( keys):
 		print "invalid usage row"
@@ -130,7 +132,6 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 			con_bounces = lock["con-bounces"]
 			locks[ "(w) %s" % symbol_name] = [ con_bounces]
 			
-		#FIXME graphing
 		#plot
 		g = graphing.init( class_name, "%s/top-%d.svg" % ( path, i))
 

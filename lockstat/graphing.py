@@ -1,5 +1,7 @@
 import Gnuplot, Gnuplot.funcutils
 
+#TODO series histogram .. gnuplot object argument 
+
 ### GNUPlot ###
 colors = [ 	
 		'#FF0000', '#00FF00', '#0000FF', 
@@ -87,8 +89,6 @@ def histogram( data, filename, title, cmds=[], g = None, title_len=40):
 
 
 def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
-	sigma = float( discarded) #FIXME must be list
-
 	sigma = None
 	n_samples = 0
 	for key, values in data.iteritems():

@@ -5,6 +5,8 @@ import csv
 
 import graphing
 
+name = "stat"
+
 def plot_stat_series( stat, cpu, filename, title, sample_rate):
 	data = {}
 	for key, value in stat[0][cpu].iteritems():
