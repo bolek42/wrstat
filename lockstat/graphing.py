@@ -73,9 +73,7 @@ def histogram( data, filename, title, cmds=[], g = None):
 	g.close()
 
 def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
-	histogram = []
-
-	sigma = float( discarded)
+	sigma = float( discarded) #FIXME must be list
 
 	sigma = None
 	n_samples = 0
@@ -93,7 +91,9 @@ def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
 
 	others = [100.0] * n_samples
 	percentage = [ 0.0] * n_samples
+	normalized = {}
 	for key, values in sorted( data.iteritems(), key=lambda (key, value): value, reverse=True)[0:16]:
+		print "##########################################################"
 		#over all samples
 		for i in range( n_samples):
 			percentage[i] = values[i] * 100.0 / sigma[i]
@@ -101,19 +101,15 @@ def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
 
 		#give gnuplot the category key
 		if n_samples == 1:
-			pl = Gnuplot.PlotItems.Data( percentage, title=("%s (%.2f%%)" % (str( key), percentage[0])))
+			normalized[ "%s (%.2f%%)" % (str( key), percentage[0])] = list( percentage)
 		else:
-			pl = Gnuplot.PlotItems.Data( percentage, title=str( key))
-		histogram.append( pl)
+			normalized[ key] = list( percentage)
 
 	#others category
 	if n_samples == 1:
-		pl = Gnuplot.PlotItems.Data( others, title="others")
+		normalized[ "others (%.2f%%)" % others[0]] = others
 	else:
-		pl = Gnuplot.PlotItems.Data( others, title="others")
-
-	histogram.append( pl)
-	histogram.reverse()
+		normalized[ "others"] = others
 
 	#actual gnuplot stuff
 	if g is None:
@@ -121,17 +117,7 @@ def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
 
 	g( "set yrange [0:100]")
 	g( "set ylabel 'Runtime Percentage'")
-	g( "set title '%s'" % title)
-	g( "set style data histograms")
-	g( "set style histogram rowstacked")
-	g( "set style fill solid border -1")
-	g( "set key invert reverse Left outside")
-	g( "set style line 1 lc rgb 'red'")
+	print normalized
 
-	for cmd in cmds:
-		g( cmd)
-
-	g.plot(	*histogram)
-
-	g.close()
+	histogram( normalized, "", title, cmds, g)
 
