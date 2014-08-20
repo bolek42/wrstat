@@ -1,7 +1,9 @@
 #oprofile
+import os
 import csv
-import operator
 import shutil
+import operator
+import subprocess
 
 import graphing
 
@@ -10,13 +12,13 @@ import graphing
 #########################################
 
 def presampling( test_dir):
-	pass
+	subprocess.call( [ "./oprofile-init.sh", test_dir])
 
 def sample( test_dir, t):
 	pass
 
 def postsampling( test_dir):
-	pass
+	subprocess.call( [ "./oprofile-deinit.sh", test_dir])
 
 
 #########################################
@@ -24,6 +26,9 @@ def postsampling( test_dir):
 #########################################
 
 def parse( test_dir):
+	if not os.path.isfile( "%s/samples/oprofile" % test_dir):
+		return None
+
 	#read and sanitize data
 	file = open( "%s/samples/oprofile" % test_dir, "r")
 	raw = csv.reader( file, delimiter=' ')
@@ -70,6 +75,9 @@ def parse( test_dir):
 #########################################
 
 def plot( test_dir, data, sample_rate):
+	if data is None:
+		return
+
 	n_cpu = data[ "n_cpu"]
 	rows = data[ "rows"]
 	#separate plot 
@@ -85,7 +93,7 @@ def plot_histogram( prefix, rows, key, title_prefix, discarded):
 		data[ row["symbol_name"]] = [float( row[key])]
 
 	cmds = [ "unset xtics"]
-	graphing.histogram_percentage( data, "%s_sym.svg" % prefix, "%s (Symbol Names)" % title_prefix, discarded)
+	graphing.histogram_percentage( data, "%s_sym.svg" % prefix, "Oprofile %s (Symbol Names)" % title_prefix, discarded)
 
 	apps = {}
 	for row in rows:
@@ -98,4 +106,4 @@ def plot_histogram( prefix, rows, key, title_prefix, discarded):
 	for app, usage in sorted( apps.iteritems(), key=operator.itemgetter(1)):
 		data[ app] = [float( usage)]
 
-	graphing.histogram_percentage( data, "%s_app.svg" % prefix, "%s (App Names)" % title_prefix, discarded)
+	graphing.histogram_percentage( data, "%s_app.svg" % prefix, "Oprofile %s (App Names)" % title_prefix, discarded)

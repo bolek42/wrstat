@@ -72,8 +72,6 @@ def parse_sample( filename):
 #########################################
 
 def plot( test_dir, diskstats, sample_rate):
-	#aggregate sampled
-
 	#FIXME remove this when time is the last dimension!
 	names = []
 	for name, device in diskstats[0].iteritems():

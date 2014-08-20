@@ -12,96 +12,51 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 tool_path="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-vmlinux="$( cat "$tool_path/lockstat.config" | grep "vmlinux" | cut -d " "  -f 2-)"
-kernel_mod="$( cat "$tool_path/lockstat.config" | grep "kernel_mod" | cut -d " "  -f 2-)"
-
 #parsing arguments
 if [ $# -lt 2 ]; then
 	echo "Usage: $0 \"test directory\" prog [arg1] [arg2] ..."
 	exit 0
 fi
+test_dir="$1"
 
 if [ "$(which $2 2>/dev/null)" = "" ]; then
 	echo "ERROR: \"$2\" comand or file not found"
 	exit 0
 fi
-
 cmd=${@:2:$#}
-test_dir="$1"
 
+#prepare testdir
 mkdir -p "$test_dir"
 if [ ! -d "$test_dir" ]; then
 	echo "ERROR: failed to created $test_dir directory."
 	exit 0
 fi
 cp "$tool_path/lockstat.config" "$test_dir/lockstat.config"
-
 echo "$cmd" > "$test_dir/cmd"
-
-#init lockstat
-echo "clearing lockstat"
-sudo su -m -c "echo 0 > /proc/lock_stat"
-
-#init Oprofile
-if [ "$(which opcontrol 2>/dev/null)" != "" ]; then
-	echo "starting oprofile"
-	sudo opcontrol --reset
-	sudo opcontrol --deinit
-	sudo modprobe oprofile timer=1
-	sudo su -m -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
-	sudo opcontrol --separate=cpu
-fi
-
-#if [ $oprof_mode = "separate" ]; then
-#else
-#	sudo opcontrol --separate=none
-#fi
-rm -rf "$test_dir/oprofile_data/"
-
-
-if [ "$vmlinux" == "" ]
-then
-	sudo opcontrol --start --no-vmlinux --session-dir="$test_dir/oprofile_data/"
-else
-	sudo opcontrol --start --vmlinux="$vmlinux" --session-dir="$test_dir/oprofile_data/"
-fi
-
-#sampling deamon for /proc files
 sample_dir="$test_dir/samples"
-mkdir -p "$sample_dir"
-rm -f "$sample_dir"/*
+mkdir -p "$test_dir/samples"
+rm -f "$test_dir/samples"/*
+
+#starting sampling deamon
 sudo python "$tool_path/lockstat-sampling-deamon.py" "$test_dir"&
 sampling_deamon_pid=$!
 
-##############
-begin_t=`date +%H-%M-%S`
-
-#command line
+#running command
 echo eval $cmd
 eval $cmd $i > "$test_dir/output"
-
-end_t=`date +%H-%M-%S`
-##############
 
 #deinit sampling deamon
 echo "killing sampling deamon..."
 sudo kill -SIGTERM $sampling_deamon_pid
 wait $sampling_deamon_pid
 
-#deinit oprofile
-if [ "$(which opcontrol 2>/dev/null)" != "" ]; then
-	sudo opcontrol --stop
-	sudo opcontrol --dump
-	sudo opcontrol --shutdown
-	#opreport --session-dir="$test_dir/oprofile_data/" -p $kernel_mod -l > "$test_dir/oprof_results"
-	opreport --session-dir="$test_dir/oprofile_data/" -l > "$test_dir/samples/oprofile"
-fi
-
+#chown everything in test_dir to current user
 user=$USER
 group=$(id -gn)
 sudo chown -R $user:$group "$test_dir"
 find "$test_dir" -type d -exec chmod 755 {} \;
 find "$test_dir" -type f -exec chmod 644 {} \;
 
+#postprocessing
 python "$tool_path/lockstat-parser.py" "$test_dir"
 python "$tool_path/lockstat-graph.py" "$test_dir"
