@@ -38,8 +38,9 @@ def plot( test_dir, data, sample_rate):
 	plot_histogram( "%s/cpu_aggregate" % test_dir, rows, "samples_aggregate", "Total Runtime Aggregate", 0)
 
 
-def parse( filename):
-	file = open( filename, "r")
+def parse( test_dir):
+	#read and sanitize data
+	file = open( "%s/samples/oprofile" % test_dir, "r")
 	raw = csv.reader( file, delimiter=' ')
 	rows = map( lambda row: filter(lambda s: s != '', row), raw)
 

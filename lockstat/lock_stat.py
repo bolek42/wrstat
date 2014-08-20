@@ -1,5 +1,6 @@
 #/proc/lockstat
 
+import os
 import csv
 
 import graphing
@@ -35,7 +36,7 @@ def parse_lock( row, offset):
 
 	return lock
 
-def parse( filename):
+def parse_sample( filename):
 	file = open( filename, "r")
 
 	raw = list( csv.reader( file, delimiter=' '))
@@ -80,6 +81,18 @@ def parse( filename):
 
 	file.close()
 	return lock_classes
+
+def parse( test_dir):
+	t = 0
+	samples = []
+
+	while os.path.isfile( "%s/samples/lock_stat_%d" % ( test_dir, t)):
+		sample = parse_sample( "%s/samples/lock_stat_%d" % ( test_dir, t))
+		samples.append( sample)
+
+		t+= 1
+
+	return samples
 
 def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 	#determine top n

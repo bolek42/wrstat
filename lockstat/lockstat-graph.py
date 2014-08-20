@@ -12,7 +12,7 @@ if __name__ == "__main__":
 		print "usage: %s test_dir oprofile_filter1 ...(filtering not implemented)" % sys.argv[0]
 		exit(1)
 
-	#read samplerate from config
+	#read config file
 	config = load_config( "%s/lockstat.config" % sys.argv[1])
 	sample_rate = float( config[ "samprate"])
 	modules = load_modules( config[ "modules"])

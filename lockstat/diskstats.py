@@ -1,5 +1,6 @@
 # /proc/diskstats
 
+import os
 import csv
 
 import graphing
@@ -7,7 +8,7 @@ import graphing
 name = "diskstats"
 
 #TODO iostat
-def parse( filename):
+def parse_sample( filename):
 	file = open( filename, "r")
 
 	raw = list( csv.reader( file, delimiter=' '))
@@ -35,6 +36,18 @@ def parse( filename):
 	file.close()
 
 	return devices
+
+def parse( test_dir):
+	t = 0
+	samples = []
+
+	while os.path.isfile( "%s/samples/diskstats_%d" % ( test_dir, t)):
+		sample = parse_sample( "%s/samples/diskstats_%d" % ( test_dir, t))
+		samples.append( sample)
+
+		t+= 1
+
+	return samples
 
 def plot( test_dir, diskstats, sample_rate):
 	#aggregate sampled

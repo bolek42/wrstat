@@ -72,7 +72,7 @@ def parse_cpu_row( row):
 
 	return name, cpu
 	
-def parse( filename):
+def parse_sample( filename):
 	file = open( filename, "r")
 
 	raw = list( csv.reader( file, delimiter=' '))
@@ -88,7 +88,20 @@ def parse( filename):
 			n_cpu += 1
 		elif len( row) == 2:
 			stat[ row[ 0]] = stat_unit( row[1])
-		# FIXME add missing
+
+		#TODO add missing
 
 	stat["n_cpu"] = n_cpu
 	return stat
+
+def parse( test_dir):
+	t = 0
+	samples = []
+
+	while os.path.isfile( "%s/samples/stat_%d" % ( test_dir, t)):
+		sample = parse_sample( "%s/samples/stat_%d" % ( test_dir, t))
+		samples.append( sample)
+
+		t+= 1
+
+	return samples
