@@ -51,7 +51,7 @@ def series( data, filename, title, cmds=[], g = None):
 """
 def histogram( data, filename, title, cmds=[], g = None, title_len=40):
 	histogram = []
-	for key, value in data.iteritems():
+	for key, value in sorted( data.iteritems(), key=lambda (key, value): value[0]):
 		#truncate title
 		key = key[ 0: title_len]
 		key += " " * ( title_len - len( key))
