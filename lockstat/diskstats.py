@@ -3,7 +3,8 @@
 import csv
 
 import graphing
-
+#/proc/diskstats
+#TODO iostat
 def parse( filename):
 	file = open( filename, "r")
 
@@ -53,7 +54,6 @@ def plot( test_dir, diskstats, sample_rate):
 			data[ "write"].append( ((t / sample_rate), write * sample_rate))
 
 		cmds = [	"set key outside",
-				"set title 'Sectors Reading/Writing %s'" % name,
 				"set xlabel 'Runtime ( sec)'",
 				"set ylabel 'Sectors/s'"]
 

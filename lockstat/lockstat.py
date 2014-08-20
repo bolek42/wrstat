@@ -132,9 +132,9 @@ def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
 			
 		#FIXME graphing
 		#plot
-		g = graphing.init( "%s/top-%d.svg" % ( path, i))
+		g = graphing.init( class_name, "%s/top-%d.svg" % ( path, i))
 
-		g( "set multiplot title '%s'" % class_name)
+		g( "set multiplot")
 
 		g( "set origin 0,0.45")
 		g( "set size 0.5,0.5")

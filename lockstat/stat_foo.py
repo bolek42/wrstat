@@ -42,7 +42,6 @@ def plot( test_dir, stat, sample_rate):
 
 	#aggregated
 	cmds = [ "set xrange [-0.5:%.1f]" % (stat[0]["n_cpu"] - 0.5),
-			"set xtics 1",
 			"set xlabel 'CPU'"]
 	graphing.histogram( data, "%s/stat_percpu.svg" % test_dir, "Stat per CPU", cmds)
 

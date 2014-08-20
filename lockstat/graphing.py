@@ -11,11 +11,15 @@ colors = [
 		'#00FF88', '#88FF00', '#FF8800',
 		'#000000']
 
-def init( filename):
+def init( title, filename):
 	g = Gnuplot.Gnuplot( debug=0)
 	g( "set terminal svg")
 	g( "set output '%s'" % filename)
 	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
+
+	#set title on center of the screen
+	g( "set title ' '")
+	g( "set label 1 '%s' at screen 0.5,0.95 center" % title)
 	return g
 
 """
@@ -25,9 +29,7 @@ def init( filename):
 """
 def series( data, filename, title, cmds=[], g = None):
 	if g is None:
-		g = init( filename)
-
-	g( "set title '%s'" % title)
+		g = init( title, filename)
 
 	for cmd in cmds:
 		g( cmd)
@@ -51,6 +53,7 @@ def series( data, filename, title, cmds=[], g = None):
 """
 def histogram( data, filename, title, cmds=[], g = None, title_len=40):
 	histogram = []
+	n_samples = 0
 	for key, value in sorted( data.iteritems(), key=lambda (key, value): value[0]):
 		#truncate title
 		key = key[ 0: title_len]
@@ -59,22 +62,29 @@ def histogram( data, filename, title, cmds=[], g = None, title_len=40):
 		pl = Gnuplot.PlotItems.Data( value, title=key)
 		histogram.append( pl)
 
+		if len( value) > n_samples:
+			n_samples = len( value)
+
 	#histogram
 	if g is None:
-		g = init( filename)
+		g = init( title, filename)
 
-	g( "set title '%s'" % title)
 	g( "set style data histograms")
 	g( "set style histogram rowstacked")
 	g( "set style fill solid border -1")
 	g( "set key invert reverse Left outside")
+
+	#settin g xtics
+	if n_samples == 1:
+		g( "unset xtics")
+	else:
+		g( "set xtics 1")
 
 	for cmd in cmds:
 		g( cmd)
 
 	g.plot(	*histogram)
 
-	g.close()
 
 def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
 	sigma = float( discarded) #FIXME must be list
@@ -104,14 +114,14 @@ def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
 
 		#give gnuplot the category key
 		if n_samples == 1:
-			normalized[ "%s (%.2f%%)" % (str( key), percentage[0])] = list( percentage)
+			normalized[ "(%.2f%%) %s" % (percentage[0], str( key))] = list( percentage)
 		else:
 			normalized[ key] = list( percentage)
 
 	#others category
 	if n_samples == 1:
 		if others[0] > 0.5:
-			normalized[ "others (%.2f%%)" % others[0]] = others
+			normalized[ "(%.2f%%) others" % others[0]] = others
 	else:
 		show_others = False
 		for o in others:
@@ -123,7 +133,7 @@ def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
 
 	#actual gnuplot stuff
 	if g is None:
-		g = init( filename)
+		g = init( title, filename)
 
 	g( "set yrange [0:100]")
 	g( "set ylabel 'Runtime Percentage'")
