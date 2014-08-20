@@ -93,4 +93,4 @@ def plot( test_dir, diskstats, sample_rate):
 		cmds = [	"set key outside",
 				"set xlabel 'Runtime ( sec)'",
 				"set ylabel 'Sectors/s'"]
-
+		graphing.series( data, "%s/diskstats_sectors_%s_io.svg" % ( test_dir, name), "Sectors Reading/Writing %s" % name, cmds)
