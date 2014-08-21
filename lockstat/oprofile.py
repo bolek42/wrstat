@@ -41,10 +41,11 @@ def parse( test_dir):
 		if len( row) < 4 or not row[0].isdigit():
 			continue
 
+		#determine number of cpus
 		if n_cpu == 0:
 			n_cpu = (len ( row) / 2) - 1
 
-		#process fields
+		#process fields for each row
 		line = dict()
 		samples_aggregate = 0.0
 		runtime_aggregate = 0.0
@@ -74,6 +75,7 @@ def parse( test_dir):
 #       Plotting data                   #
 #########################################
 
+#FIXME term rows
 def plot( test_dir, data, sample_rate):
 	if data is None:
 		return
@@ -82,19 +84,31 @@ def plot( test_dir, data, sample_rate):
 	rows = data[ "rows"]
 	#separate plot 
 	for cpu in range( n_cpu):
-		plot_histogram( "%s/cpu_%d" % (test_dir, cpu), rows, "samples_cpu%d" % cpu, "Total Runtime CPU %d" % cpu, 0)
+		file_prefix = "%s/cpu_%d" % (test_dir, cpu)
+		title_prefix = "Total Runtime CPU %d" % cpu
+		plot_histogram( file_prefix, rows, "samples_cpu%d" % cpu, title_prefix, 0)
 
-	plot_histogram( "%s/cpu_aggregate" % test_dir, rows, "samples_aggregate", "Total Runtime Aggregate", 0)
+	#aggregated plot
+	file_prefix = "%s/cpu_aggregate" % test_dir
+	title_prefix = "Total Runtime Aggregate"
+	plot_histogram( file_prefix, rows, "samples_aggregate", title_prefix, 0)
 
-def plot_histogram( prefix, rows, key, title_prefix, discarded):
+def plot_histogram( file_prefix, rows, key, title_prefix, discarded):
 	rows = sorted( rows, key=lambda row: row[key])
+
+	#prepare data for symbol names
 	data = {}
 	for row in rows:
 		data[ row["symbol_name"]] = [float( row[key])]
 
-	cmds = [ "unset xtics"]
-	graphing.histogram_percentage( data, "%s_sym.svg" % prefix, "Oprofile %s (Symbol Names)" % title_prefix, discarded)
+	#actual plotting
+	title = "Oprofile %s (Symbol Names)" % title_prefix
+	filename = "%s_sym.svg" % file_prefix
+	g = graphing.init( title, filename)
+	graphing.histogram_percentage( data, discarded, g)
+	g.close()
 
+	#prepare data for app names
 	apps = {}
 	for row in rows:
 		if row["app_name"] not in apps:
@@ -106,4 +120,9 @@ def plot_histogram( prefix, rows, key, title_prefix, discarded):
 	for app, usage in sorted( apps.iteritems(), key=operator.itemgetter(1)):
 		data[ app] = [float( usage)]
 
-	graphing.histogram_percentage( data, "%s_app.svg" % prefix, "Oprofile %s (App Names)" % title_prefix, discarded)
+	#actual plotting
+	title = "Oprofile %s (App Names)" % title_prefix
+	filename = "%s_app.svg" % file_prefix
+	g = graphing.init( title, filename)
+	graphing.histogram_percentage( data, discarded, g)
+	g.close()

@@ -11,7 +11,7 @@ import graphing
 #########################################
 
 def presampling( test_dir):
-	pass
+	subprocess.call( [ "./lock_stat-reset.sh"])
 
 def sample( test_dir, t):
 	shutil.copy( "/proc/lock_stat", "%s/samples/lock_stat_%d" % ( test_dir, t))
@@ -117,147 +117,144 @@ def parse_lock( row, offset):
 #########################################
 
 def plot( test_dir, samples, sample_rate):
+	#preparing data
 	data = {}
 	for (class_name, lock_class) in samples[-1].iteritems():
 		data[ class_name] = [ lock_class[ "waittime-total"]]
-	cmds = [ "unset xtics"]
-	graphing.histogram_percentage( data, "%s/lockstat_waititme.svg" % test_dir, "Waittime Total", 0, cmds)
+	#actual plotting
+	title =  "/proc/lock_stat Waittime Total"
+	filename = "%s/lockstat_waititme.svg" % test_dir
+	g = graphing.init( title, filename)
+	graphing.histogram_percentage( data, 0, g)
+	g.close()
 
+
+	#preparing data
 	data = {}
 	for (class_name, lock_class) in samples[-1].iteritems():
 		data[ class_name] = [ lock_class[ "holdtime-total"]]
-	cmds = [ "unset xtics"]
-	graphing.histogram_percentage( data, "%s/lockstat_holdtime.svg" % test_dir, "Holdtime Total", 0, cmds)
+	#actual plotting
+	title =  "/proc/lock_stat Holdtime Total"
+	filename = "%s/lockstat_holdtime.svg" % test_dir
+	g = graphing.init( title, filename)
+	graphing.histogram_percentage( data, 0, g)
+	g.close()
 
-	#determine top n
-	top_names = []
-	for key, value in samples[-1].iteritems():
-		top_names.append( value)
-
-	top_names = sorted( top_names, key=lambda x: x["waittime-total"], reverse = True)
+	#determine top locks in respect to total wait time
+	top = []
+	for lock_name, lock_class in samples[-1].iteritems():
+		top.append( lock_class)
+	top = sorted( top, key=lambda x: x["waittime-total"], reverse = True)
 	
-	#actual plot
+	#time series and detailed plot for top locks
 	data = {}
-	for lock_class in top_names[0:8]:
-		series = []
-		for i in range( len( samples) - 1):
-			if lock_class["name"] in samples[i]:
-				t = ( samples[i+1][ lock_class["name"]]["waittime-total"] - 
-					samples[i][ lock_class["name"]]["waittime-total"]   )
-			else:
-				t = 0.0
+	rank = 1
+	for lock_class in top[0:8]:
+		lock_name = lock_class["name"]
 
-			series.append( (i / float( sample_rate), t))
+		#detailed plot
+		plot_detailed( test_dir, samples, sample_rate, lock_name, rank)
+		rank += 1
+
+		#preparing data
+		series = []
+		for t in range( len( samples) - 1):
+			if lock_name in samples[t]:
+				wt = ( samples[t+1][ lock_name]["waittime-total"] - 
+					samples[t][ lock_name]["waittime-total"]   )
+			else:
+				wt = 0.0
+
+			series.append( (t / float( sample_rate), wt))
 
 		data[ lock_class["name"]] = series
 
-	cmds = [	"set key outside",
-			"set key bottom right",
-			"set key horizontal",
-			"set key bmargin",
-			"set xlabel 'runtime ( sec)'",
-			"set ylabel 'usec/s'"]
+	#actual plotting
+	title = "/proc/lock_stat Waittime Top"
+	filename = "%s/lockstat_waittime_top.svg" % test_dir
+	g = graphing.init( title, filename)
+	g( "set key outside")
+	g( "set key bottom right")
+	g( "set key horizontal")
+	g( "set key bmargin")
+	g( "set xlabel 'runtime ( sec)'")
+	g( "set ylabel 'usec/s'")
+	graphing.series( data, g)
+	g.close()
 
-	graphing.series( data, "%s/lockstat_waittime_top.svg" % test_dir, 'Waittime Top', cmds)
+def plot_detailed( test_dir, samples, sample_rate, lock_name, rank):
+	#calculating curves
+	waittime = []
+	contentions = []
+	con_bounce = []
+	acquisitions = []
+	for t in range( len( samples) - 1):
+		if lock_name in samples[t]:
+			wt = ( samples[t+1][ lock_name]["waittime-total"] - 
+				samples[t][ lock_name]["waittime-total"]   )
 
-	#FIXME
-	plot_topn_detailed( samples, 2, "waittime-total", 8, test_dir)
+			aq = ( samples[t+1][ lock_name]["acquisitions"] - 
+				samples[t][ lock_name]["acquisitions"]   )
+			ct = ( samples[t+1][ lock_name]["contentions"] - 
+				samples[t][ lock_name]["contentions"]   )
+			cb = ( samples[t+1][ lock_name]["con-bounces"] - 
+				samples[t][ lock_name]["con-bounces"]   )
 
-def plot_topn_detailed( samples, sample_rate, sort_key, n, path):
-	#determine top n
-	top_names = []
-	for key, value in samples[-1].iteritems():
-		top_names.append( value)
+		else:
+			wt = aq = ct = cb = 0.0
 
-	top_names = sorted( top_names, key=lambda x: x[sort_key], reverse = True)
-	
-	#actual plot
+		waittime.append( (t / float( sample_rate), wt * sample_rate))
+		acquisitions.append( (t / float( sample_rate), aq * sample_rate))
+		contentions.append( (t / float( sample_rate), ct * sample_rate))
+		con_bounce.append( (t / float( sample_rate), cb * sample_rate))
+
+	#build histogram data structure
 	locks = {}
-	for i in range( n):
-		class_name = top_names[i]["name"]
+	for lock in samples[-1][ lock_name]["read-locks"]:
+		symbol_name = lock["symbol"]
+		con_bounces = lock["con-bounces"]
+		locks[ "(r) %s" % symbol_name] = [ con_bounces]
 
-		#calculating curves
-		waittime = []
-		contentions = []
-		con_bounce = []
-		acquisitions = []
-		for t in range( len( samples) - 1):
-			if class_name in samples[t]:
-				wt = ( samples[t+1][ class_name]["waittime-total"] - 
-					samples[t][ class_name]["waittime-total"]   )
+	for lock in samples[-1][ lock_name]["write-locks"]:
+		symbol_name = lock["symbol"]
+		con_bounces = lock["con-bounces"]
+		locks[ "(w) %s" % symbol_name] = [ con_bounces]
+		
+	#actual plotting
+	title = "/proc/lockstat Top %d: %s" % ( rank, lock_name)
+	filename =  "%s/top-%d.svg" % ( test_dir, rank)
+	g = graphing.init( title, filename)
+	g( "set multiplot")
 
-				aq = ( samples[t+1][ class_name]["acquisitions"] - 
-					samples[t][ class_name]["acquisitions"]   )
-				ct = ( samples[t+1][ class_name]["contentions"] - 
-					samples[t][ class_name]["contentions"]   )
-				cb = ( samples[t+1][ class_name]["con-bounces"] - 
-					samples[t][ class_name]["con-bounces"]   )
+	#Waittime subplot
+	g( "set origin 0,0.45")
+	g( "set size 0.5,0.5")
+	g( "set title 'Waittime'")
+	g( "set ylabel 'wait us/s'")
+	graphing.series( {"Waittime" : waittime}, g)
 
-			else:
-				wt = aq = ct = cb = 0.0
+	g("unset object 1")
 
-			waittime.append( (t / float( sample_rate), wt * sample_rate))
-			acquisitions.append( (t / float( sample_rate), aq * sample_rate))
-			contentions.append( (t / float( sample_rate), ct * sample_rate))
-			con_bounce.append( (t / float( sample_rate), cb * sample_rate))
+	#Acquisitions - Contentions subplot
+	g( "set origin 0.5,0.45")
+	g( "set size 0.5,0.5")
+	g( "set title 'Acquisitions - Contentions'")
+	g( "set ylabel '#/s'")
+	g( "set logscale y")
+	g( "set key bottom right")
+	g( "set key outside")
+	g( "set key bmargin")
+	g( "set key horizontal")
+	graphing.series( {"acqu." : acquisitions, "cont." :  contentions}, g)
+	g( "unset logscale y")
+	g( "set key default")
 
-		#FIXME term read_locks
-		#build histogram data structure
-		locks = {}
-		for lock in samples[-1][ class_name]["read-locks"]:
-			symbol_name = lock["symbol"]
-			con_bounces = lock["con-bounces"]
-			locks[ "(r) %s" % symbol_name] = [ con_bounces]
+	#Bounces - Functions subplot
+	g( "set origin 0,0")
+	g( "set size 1,0.5")
+	g( "set title 'Read/Write'")
+	g( "set ylabel 'Bounces Total'")
+	graphing.histogram_percentage( locks, 0, g)
 
-		for lock in samples[-1][ class_name]["write-locks"]:
-			symbol_name = lock["symbol"]
-			con_bounces = lock["con-bounces"]
-			locks[ "(w) %s" % symbol_name] = [ con_bounces]
-			
-		#plot
-		g = graphing.init( class_name, "%s/top-%d.svg" % ( path, i))
-
-		g( "set multiplot")
-
-		g( "set origin 0,0.45")
-		g( "set size 0.5,0.5")
-
-		cmds = [ "set ylabel 'wait us/s'"]
-		data = {}
-		data[ "Waittime"] = waittime
-		graphing.series( data, "", "Waittime", cmds, g)
-
-		g("unset object 1")
-
-		g( "set ylabel '#/s'")
-		g( "set logscale y")
-		g( "set key bottom right")
-		g( "set key outside")
-		g( "set key bmargin")
-		g( "set key horizontal")
-		g( "set origin 0.5,0.45")
-		g( "set size 0.5,0.5")
-
-		g( "set title 'Acquisitions - Contentions'")
-
-		cmds = [ "set ylabel '#/s'"]
-		data = {}
-		data[ "acqu."] =  acquisitions
-		data[ "cont."] =  contentions
-		graphing.series( data, "", "Acquisitions - Contentions", cmds, g)
-
-		g( "unset logscale y")
-		g( "set key default")
-
-		#histogram
-		g( "unset xtics")
-		g( "set ylabel 'Bounces Total'")
-		g( "set origin 0,0")
-		g( "set size 1,0.5")
-
-		g( "set title 'Bounces - Functions'")
-
-		graphing.histogram_percentage( locks, "", "Read/Write", 0, [], g)
-
-		g.close()
+	g.close()
 

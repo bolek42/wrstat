@@ -83,6 +83,8 @@ Modules:
 	the .py extension.
 
 Implemented Modules:
+	TODO datastrucure
+	TODO module review
 	stat
 		This module will take samples of /proc/stat
 

@@ -17,9 +17,16 @@ def load_config( filename):
 	return config
 
 def load_modules( modnames):
+	if isinstance( modnames, basestring):
+		modnames = [ modnames]
+
 	modules = {}
 	for modname in modnames:
-		modules[ modname] =  imp.load_source( modname, "%s.py" % modname)
+		try:
+			modules[ modname] =  imp.load_source( modname, "%s.py" % modname)
+		except:
+			print "error loading %s" % modname
+			raise 
 
 	return modules
 

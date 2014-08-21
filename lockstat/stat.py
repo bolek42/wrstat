@@ -89,41 +89,54 @@ def parse_cpu_row( row):
 #########################################
 
 def plot( test_dir, stat, sample_rate):
-	#aggregate sampled
-	plot_stat_series( stat, "cpu", "%s/stat_aggreagted_sampled.svg" % test_dir, "Stat aggreagted sampled", sample_rate)
+	#aggregate
+	title = "/proc/stat Aggreagted"
+	filename = "%s/stat_aggreagted_sampled.svg" % test_dir
+	plot_stat_series( stat, "cpu", filename, title, sample_rate)
 
-	#per cpu aggregated
+	#prepare data
 	data = {}
 	for key, value in stat[0]["cpu"].iteritems():
 		data[ key] = []
 
 	for cpu in range( stat[0]["n_cpu"]):
 		for key, value in data.iteritems():
-			value.append( stat[-1]["cpu%d" % cpu][key] - stat[0]["cpu%d" % cpu][key])
+			value.append( stat[-1]["cpu%d" % cpu][key] -
+					stat[0]["cpu%d" % cpu][key])
 
 		#per cpu sampled
-		plot_stat_series( stat, "cpu%d" % cpu, "%s/stat_cpu%d_sampled.svg" % ( test_dir, cpu), "Stat CPU %d sampled" % cpu, sample_rate)
+		filename = "%s/stat_cpu%d_sampled.svg" % ( test_dir, cpu)
+		title = "/proc/stat CPU %d" % cpu
+		plot_stat_series( stat, "cpu%d" % cpu, filename, title, sample_rate)
 	
 
 	#aggregated
-	cmds = [ "set xrange [-0.5:%.1f]" % (stat[0]["n_cpu"] - 0.5),
-			"set xlabel 'CPU'"]
-	graphing.histogram( data, "%s/stat_percpu.svg" % test_dir, "Stat per CPU", cmds)
+	title = "/proc/stat Total"
+	filename = "%s/stat_percpu.svg" % test_dir
+	g = graphing.init( title, filename)
+	g( "set xlabel 'CPU'")
+	graphing.histogram_percentage( data, 0, g, 15)
+	g.close()
 
 def plot_stat_series( stat, cpu, filename, title, sample_rate):
+	#prepare data
 	data = {}
 	for key, value in stat[0][cpu].iteritems():
 		data[ key] = []
 
 	for t in range( len( stat) - 1):
 		for key, value in data.iteritems():
-			value.append( ( t / sample_rate, stat[t + 1][cpu][key] - stat[t][cpu][key]))
+			value.append( ( t / sample_rate, stat[t + 1][cpu][key] -
+								stat[t][cpu][key]))
 
-	cmds = [	"set key outside",
-			"set key bottom right",
-			"set key horizontal",
-			"set key bmargin",
-			"set xlabel 'runtime ( sec)'",
-			"set ylabel 'Runtime %'"]
-	graphing.series( data, filename, title, cmds)
+	#actual plotting
+	g = graphing.init( title, filename)
+	g( "set key outside")
+	g( "set key bottom right")
+	g( "set key horizontal")
+	g( "set key bmargin")
+	g( "set xlabel 'runtime ( sec)'")
+	g( "set ylabel 'Runtime %'")
+	graphing.series( data, g)
+	g.close()
 

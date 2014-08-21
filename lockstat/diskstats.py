@@ -71,24 +71,32 @@ def parse_sample( filename):
 #       Plotting data                   #
 #########################################
 
-def plot( test_dir, diskstats, sample_rate):
-	#FIXME remove this when time is the last dimension!
-	names = []
-	for name, device in diskstats[0].iteritems():
-		if device[ "sectors-read"] + device[ "sectors-write"] > 0:
-			names.append( name)
-
-	for name in names:
+def plot( test_dir, samples, sample_rate):
+	for name, device in samples[0].iteritems():
+		#preparing data
 		data = { "read" : [], "write" : []}
-		for t in range( len( diskstats) - 1):
-			read  = diskstats[t + 1][name]["sectors-read"] - diskstats[t][name]["sectors-read"]
-			write = diskstats[t + 1][name]["sectors-write"] - diskstats[t][name]["sectors-write"]
+		sigma = 0.0
+		for t in range( len( samples) - 1):
+			read  = ( samples[t + 1][name]["sectors-read"] - 
+				samples[t][name]["sectors-read"])
+			write = ( samples[t + 1][name]["sectors-write"] -
+				samples[t][name]["sectors-write"])
+			sigma += read + write
 
 			#normalize
 			data[ "read"].append( ((t / sample_rate), read * sample_rate))
 			data[ "write"].append( ((t / sample_rate), write * sample_rate))
 
-		cmds = [	"set key outside",
-				"set xlabel 'Runtime ( sec)'",
-				"set ylabel 'Sectors/s'"]
-		graphing.series( data, "%s/diskstats_sectors_%s_io.svg" % ( test_dir, name), "Sectors Reading/Writing %s" % name, cmds)
+		#determine if device has io throughput
+		if sigma == 0:
+			continue
+
+		#create the plot
+		title =  "/proc/diskstats Sectors Reading/Writing %s" % name
+		filename = "%s/diskstats_sectors_%s_io.svg" % ( test_dir, name)
+		g = graphing.init( title, filename)
+		g( "set key outside")
+		g( "set xlabel 'Runtime ( sec)'")
+		g( "set ylabel 'Sectors/s'")
+		graphing.series( data, g)
+		g.close()

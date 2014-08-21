@@ -1,8 +1,5 @@
 import Gnuplot, Gnuplot.funcutils
 
-#TODO series histogram .. gnuplot object argument 
-
-### GNUPlot ###
 colors = [ 	
 		'#FF0000', '#00FF00', '#0000FF', 
 		'#008888', '#880088', '#888800', 
@@ -29,12 +26,10 @@ def init( title, filename):
 		{ "curve 1" : [ (0,0), (1,1), (2,2), (3,3)],
 		  "curve 2" : [ (0,0), (1,1), (2,4), (3,9)]}
 """
-def series( data, filename, title, cmds=[], g = None):
+def series( data, g):
 	if g is None:
-		g = init( title, filename)
-
-	for cmd in cmds:
-		g( cmd)
+		print "ERROR no gnuplot object given"
+		return
 
 	plots = []
 	i = 0
@@ -53,7 +48,8 @@ def series( data, filename, title, cmds=[], g = None):
 		{ "class 1" [ 1, 6, 2]
 		{ "class 2" [ 3, 5, 1]}
 """
-def histogram( data, filename, title, cmds=[], g = None, title_len=40):
+def histogram( data, g, title_len=40):
+	#prepare data
 	histogram = []
 	n_samples = 0
 	for key, value in sorted( data.iteritems(), key=lambda (key, value): value[0]):
@@ -68,27 +64,23 @@ def histogram( data, filename, title, cmds=[], g = None, title_len=40):
 			n_samples = len( value)
 
 	#histogram
-	if g is None:
-		g = init( title, filename)
-
 	g( "set style data histograms")
 	g( "set style histogram rowstacked")
 	g( "set style fill solid border -1")
 	g( "set key invert reverse Left outside")
 
-	#settin g xtics
+	#setting xtics
 	if n_samples == 1:
 		g( "unset xtics")
 	else:
 		g( "set xtics 1")
-
-	for cmd in cmds:
-		g( cmd)
+		g( "set xrange [-0.5:%.1f]" % (n_samples - 0.5))
 
 	g.plot(	*histogram)
 
 
-def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
+def histogram_percentage( data, discarded, g, title_len=40):
+	#determine total sum of all bars including discarded samples
 	sigma = None
 	n_samples = 0
 	for key, values in data.iteritems():
@@ -103,6 +95,7 @@ def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
 		for i in range( n_samples):
 			sigma[ i] += values[i]
 
+	#normalize values to percentage
 	others = [100.0] * n_samples
 	percentage = [ 0.0] * n_samples
 	normalized = {}
@@ -132,11 +125,8 @@ def histogram_percentage( data, filename, title, discarded, cmds=[], g = None):
 			normalized[ "others"] = others
 
 	#actual gnuplot stuff
-	if g is None:
-		g = init( title, filename)
-
 	g( "set yrange [0:100]")
 	g( "set ylabel 'Runtime Percentage'")
 
-	histogram( normalized, "", title, cmds, g)
+	histogram( normalized, g, title_len)
 
