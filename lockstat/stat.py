@@ -88,11 +88,11 @@ def parse_cpu_row( row):
 #       Plotting data                   #
 #########################################
 
-def plot( test_dir, stat, sample_rate):
+def plot( test_dir, stat, intervall):
 	#aggregate
 	title = "/proc/stat Aggreagted"
 	filename = "%s/stat_aggreagted_sampled.svg" % test_dir
-	plot_stat_series( stat, "cpu", filename, title, sample_rate)
+	plot_stat_series( stat, "cpu", filename, title, intervall)
 
 	#prepare data
 	data = {}
@@ -107,7 +107,7 @@ def plot( test_dir, stat, sample_rate):
 		#per cpu sampled
 		filename = "%s/stat_cpu%d_sampled.svg" % ( test_dir, cpu)
 		title = "/proc/stat CPU %d" % cpu
-		plot_stat_series( stat, "cpu%d" % cpu, filename, title, sample_rate)
+		plot_stat_series( stat, "cpu%d" % cpu, filename, title, intervall)
 	
 
 	#aggregated
@@ -118,7 +118,7 @@ def plot( test_dir, stat, sample_rate):
 	graphing.histogram_percentage( data, 0, g, 15)
 	g.close()
 
-def plot_stat_series( stat, cpu, filename, title, sample_rate):
+def plot_stat_series( stat, cpu, filename, title, intervall):
 	#prepare data
 	data = {}
 	for key, value in stat[0][cpu].iteritems():
@@ -126,7 +126,7 @@ def plot_stat_series( stat, cpu, filename, title, sample_rate):
 
 	for t in range( len( stat) - 1):
 		for key, value in data.iteritems():
-			value.append( ( t / sample_rate, stat[t + 1][cpu][key] -
+			value.append( ( t * intervall, stat[t + 1][cpu][key] -
 								stat[t][cpu][key]))
 
 	#actual plotting

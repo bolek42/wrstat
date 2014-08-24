@@ -76,7 +76,7 @@ def parse( test_dir):
 #########################################
 
 #FIXME term rows
-def plot( test_dir, data, sample_rate):
+def plot( test_dir, data, intervall):
 	if data is None:
 		return
 

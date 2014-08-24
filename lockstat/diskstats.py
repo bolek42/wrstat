@@ -4,6 +4,7 @@
 import os
 import csv
 import shutil
+import  subprocess
 
 import graphing
 from utils import *
@@ -13,7 +14,7 @@ from utils import *
 #########################################
 
 def presampling( test_dir):
-	pass
+	subprocess.call( [ "./diskstats-init.sh", test_dir])
 
 def sample( test_dir, t):
 	shutil.copy( "/proc/diskstats", "%s/samples/diskstats_%d" % ( test_dir, t))
@@ -82,7 +83,7 @@ def parse_sample( filename):
 #       Plotting data                   #
 #########################################
 
-def plot( test_dir, data, sample_rate):
+def plot( test_dir, data, intervall):
 
 	samples = data[ "samples"]
 	for name, device in samples[0].iteritems():
@@ -90,7 +91,6 @@ def plot( test_dir, data, sample_rate):
 		while phy_name not in data[ "blocksize"]:
 			phy_name = phy_name[:-1]
 		blocksize = data[ "blocksize"][phy_name]
-		print name + "  " + phy_name
 
 		#preparing data
 		sectors = { "read" : [], "write" : []}
@@ -107,8 +107,8 @@ def plot( test_dir, data, sample_rate):
 			sigma += read + write
 
 			#normalize
-			sectors[ "read"].append( ((t / sample_rate), read * sample_rate))
-			sectors[ "write"].append( ((t / sample_rate), write * sample_rate))
+			sectors[ "read"].append( ((t * intervall), read * intervall))
+			sectors[ "write"].append( ((t * intervall), write * intervall))
 
 			time_read = ( samples[t + 1][name]["time-read"] -
 				samples[t][name]["time-read"])
@@ -116,8 +116,8 @@ def plot( test_dir, data, sample_rate):
 				samples[t][name]["time-write"])
 
 			#normalize
-			time[ "read"].append( ((t / sample_rate), time_read * sample_rate))
-			time[ "write"].append( ((t / sample_rate), time_write * sample_rate))
+			time[ "read"].append( ((t * intervall), time_read * intervall))
+			time[ "write"].append( ((t * intervall), time_write * intervall))
 
 		#determine if device has io throughput
 		if sigma == 0:

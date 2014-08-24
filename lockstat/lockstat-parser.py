@@ -6,7 +6,7 @@ import pickle
 
 from utils import *
 
-sample_rate = 1.0
+intervall = 1.0
 
 ## actual main ##
 if __name__ == "__main__":
@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
 	#read config file
 	config = load_config( "%s/lockstat.config" % sys.argv[1])
-	sample_rate = float( config[ "samprate"])
+	intervall = float( config[ "intervall"])
 	modules = load_modules( config[ "modules"])
 
 	#calling modules for parsing

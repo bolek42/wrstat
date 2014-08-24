@@ -13,6 +13,7 @@ vmlinux="$( cat "$test_dir/lockstat.config" | grep "vmlinux" | cut -d " "  -f 2-
 #init Oprofile
 if [ "$(which opcontrol 2>/dev/null)" != "" ]; then
 	echo "starting oprofile"
+	rm -rf "$test_dir/oprofile_data/"
 	sudo opcontrol --reset
 	sudo opcontrol --deinit
 	sudo modprobe oprofile timer=1

@@ -117,7 +117,7 @@ def parse_lock( row, offset):
 #       Plotting data                   #
 #########################################
 
-def plot( test_dir, samples, sample_rate):
+def plot( test_dir, samples, intervall):
 	#preparing data
 	data = {}
 	for (class_name, lock_class) in samples[-1].iteritems():
@@ -154,7 +154,7 @@ def plot( test_dir, samples, sample_rate):
 		lock_name = lock_class["name"]
 
 		#detailed plot
-		plot_detailed( test_dir, samples, sample_rate, lock_name, rank)
+		plot_detailed( test_dir, samples, intervall, lock_name, rank)
 		rank += 1
 
 		#preparing data
@@ -166,7 +166,7 @@ def plot( test_dir, samples, sample_rate):
 			else:
 				wt = 0.0
 
-			series.append( (t / float( sample_rate), wt))
+			series.append( (t * intervall, wt))
 
 		data[ lock_class["name"]] = series
 
@@ -183,7 +183,7 @@ def plot( test_dir, samples, sample_rate):
 	graphing.series( data, g)
 	g.close()
 
-def plot_detailed( test_dir, samples, sample_rate, lock_name, rank):
+def plot_detailed( test_dir, samples, intervall, lock_name, rank):
 	#calculating curves
 	waittime = []
 	contentions = []
@@ -204,10 +204,10 @@ def plot_detailed( test_dir, samples, sample_rate, lock_name, rank):
 		else:
 			wt = aq = ct = cb = 0.0
 
-		waittime.append( (t / float( sample_rate), wt * sample_rate))
-		acquisitions.append( (t / float( sample_rate), aq * sample_rate))
-		contentions.append( (t / float( sample_rate), ct * sample_rate))
-		con_bounce.append( (t / float( sample_rate), cb * sample_rate))
+		waittime.append( (t * intervall, wt * intervall))
+		acquisitions.append( (t * intervall, aq * intervall))
+		contentions.append( (t * intervall, ct * intervall))
+		con_bounce.append( (t * intervall, cb * intervall))
 
 	#build histogram data structure
 	locks = {}
