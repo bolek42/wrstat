@@ -6,6 +6,7 @@ import csv
 import shutil
 
 import graphing
+from utils import *
 
 #########################################
 #       Sampling methods                #
@@ -35,7 +36,17 @@ def parse( test_dir):
 
 		t+= 1
 
-	return samples
+	blocksize = parse_blocksize( test_dir)
+
+	return {"samples" : samples, "blocksize" : blocksize}
+
+def parse_blocksize( test_dir):
+	blocksize = load_config( "%s/blocksizes" % test_dir)
+
+	for name, bs in blocksize.iteritems():
+		blocksize[ name] = int( bs)
+
+	return blocksize
 
 def parse_sample( filename):
 	file = open( filename, "r")
@@ -71,32 +82,63 @@ def parse_sample( filename):
 #       Plotting data                   #
 #########################################
 
-def plot( test_dir, samples, sample_rate):
+def plot( test_dir, data, sample_rate):
+
+	samples = data[ "samples"]
 	for name, device in samples[0].iteritems():
+		phy_name = name
+		while phy_name not in data[ "blocksize"]:
+			phy_name = phy_name[:-1]
+		blocksize = data[ "blocksize"][phy_name]
+		print name + "  " + phy_name
+
 		#preparing data
-		data = { "read" : [], "write" : []}
+		sectors = { "read" : [], "write" : []}
+		time = { "read" : [], "write" : []}
 		sigma = 0.0
 		for t in range( len( samples) - 1):
 			read  = ( samples[t + 1][name]["sectors-read"] - 
 				samples[t][name]["sectors-read"])
 			write = ( samples[t + 1][name]["sectors-write"] -
 				samples[t][name]["sectors-write"])
+			read *= blocksize
+			write *= blocksize
+
 			sigma += read + write
 
 			#normalize
-			data[ "read"].append( ((t / sample_rate), read * sample_rate))
-			data[ "write"].append( ((t / sample_rate), write * sample_rate))
+			sectors[ "read"].append( ((t / sample_rate), read * sample_rate))
+			sectors[ "write"].append( ((t / sample_rate), write * sample_rate))
+
+			time_read = ( samples[t + 1][name]["time-read"] -
+				samples[t][name]["time-read"])
+			time_write = ( samples[t + 1][name]["time-write"] -
+				samples[t][name]["time-write"])
+
+			#normalize
+			time[ "read"].append( ((t / sample_rate), time_read * sample_rate))
+			time[ "write"].append( ((t / sample_rate), time_write * sample_rate))
 
 		#determine if device has io throughput
 		if sigma == 0:
 			continue
 
-		#create the plot
+		#plotting sectors/s
 		title =  "/proc/diskstats Sectors Reading/Writing %s" % name
-		filename = "%s/diskstats_sectors_%s_io.svg" % ( test_dir, name)
+		filename = "%s/diskstats_sectors_%s.svg" % ( test_dir, name)
 		g = graphing.init( title, filename)
 		g( "set key outside")
 		g( "set xlabel 'Runtime ( sec)'")
 		g( "set ylabel 'Sectors/s'")
-		graphing.series( data, g)
+		graphing.series( sectors, g)
+		g.close()
+
+		#plotting time spent on io
+		title =  "/proc/diskstats Time spent on IO %s" % name
+		filename = "%s/diskstats_time_io_%s.svg" % ( test_dir, name)
+		g = graphing.init( title, filename)
+		g( "set key outside")
+		g( "set xlabel 'Runtime ( sec)'")
+		g( "set ylabel 'ms/s'")
+		graphing.series( time, g)
 		g.close()

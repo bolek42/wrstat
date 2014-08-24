@@ -24,6 +24,7 @@ if __name__ == "__main__":
 	#calling modules for parsing
 	samples = {}
 	for modname, module in modules.iteritems():
+		print "%s: calling module %s" % ( __file__, modname)
 		data = module.parse( sys.argv[1])
 		samples[ modname] = data
 	
