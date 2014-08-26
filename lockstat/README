@@ -8,7 +8,11 @@ Installation
 	3. modify the lockstat/lockstat.config
 
 	Recompiling the kernel:
-		dpkg -i
+		apt-get install ncurses-dev kernel-package
+		make menuconfig
+		[ kernel configuration ]
+		fakeroot make-kpkg --initrd --revision=1.0 kernel_image
+		dpkg -i ...
 		grub-install /dev/vda ( optional?)
 		reboot
 
