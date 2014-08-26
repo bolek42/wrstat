@@ -8,7 +8,7 @@ if [ $# -ne 1 ]; then
 fi
 test_dir="$1"
 
-kernel_mod="$( cat "$test_dir/lockstat.config" | grep "kernel_mod" | cut -d " "  -f 2-)"
+kernel_mod="$( cat "$test_dir/wrstat.config" | grep "kernel_mod" | cut -d " "  -f 2-)"
 
 #deinit oprofile
 if [ "$(which opcontrol 2>/dev/null)" != "" ]; then

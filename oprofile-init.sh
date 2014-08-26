@@ -8,7 +8,7 @@ if [ $# -ne 1 ]; then
 fi
 test_dir="$1"
 
-vmlinux="$( cat "$test_dir/lockstat.config" | grep "vmlinux" | cut -d " "  -f 2-)"
+vmlinux="$( cat "$test_dir/wrstat.config" | grep "vmlinux" | cut -d " "  -f 2-)"
 
 #init Oprofile
 if [ "$(which opcontrol 2>/dev/null)" != "" ]; then
