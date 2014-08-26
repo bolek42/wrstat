@@ -124,7 +124,7 @@ def plot( test_dir, samples, intervall):
 		data[ class_name] = [ lock_class[ "waittime-total"]]
 	#actual plotting
 	title =  "/proc/lock_stat Waittime Total"
-	filename = "%s/lockstat_waititme.svg" % test_dir
+	filename = "%s/lock_stat-waititme.svg" % test_dir
 	g = graphing.init( title, filename)
 	graphing.histogram_percentage( data, 0, g)
 	g.close()
@@ -136,7 +136,7 @@ def plot( test_dir, samples, intervall):
 		data[ class_name] = [ lock_class[ "holdtime-total"]]
 	#actual plotting
 	title =  "/proc/lock_stat Holdtime Total"
-	filename = "%s/lockstat_holdtime.svg" % test_dir
+	filename = "%s/lock_stat-holdtime.svg" % test_dir
 	g = graphing.init( title, filename)
 	graphing.histogram_percentage( data, 0, g)
 	g.close()
@@ -222,8 +222,8 @@ def plot_detailed( test_dir, samples, intervall, lock_name, rank):
 		locks[ "(w) %s" % symbol_name] = [ con_bounces]
 		
 	#actual plotting
-	title = "/proc/lockstat Top %d: %s" % ( rank, lock_name)
-	filename =  "%s/top-%d.svg" % ( test_dir, rank)
+	title = "/proc/lock_stat Top %d: %s" % ( rank, lock_name)
+	filename =  "%s/lock_stat-top-%d.svg" % ( test_dir, rank)
 	g = graphing.init( title, filename)
 	g( "set multiplot")
 

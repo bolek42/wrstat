@@ -91,7 +91,7 @@ def parse_cpu_row( row):
 def plot( test_dir, stat, intervall):
 	#aggregate
 	title = "/proc/stat Aggreagted"
-	filename = "%s/stat_aggreagted_sampled.svg" % test_dir
+	filename = "%s/stat-aggreagted.svg" % test_dir
 	plot_stat_series( stat, "cpu", filename, title, intervall)
 
 	#prepare data
@@ -105,14 +105,14 @@ def plot( test_dir, stat, intervall):
 					stat[0]["cpu%d" % cpu][key])
 
 		#per cpu sampled
-		filename = "%s/stat_cpu%d_sampled.svg" % ( test_dir, cpu)
+		filename = "%s/stat-cpu%d.svg" % ( test_dir, cpu)
 		title = "/proc/stat CPU %d" % cpu
 		plot_stat_series( stat, "cpu%d" % cpu, filename, title, intervall)
 	
 
 	#aggregated
 	title = "/proc/stat Total"
-	filename = "%s/stat_percpu.svg" % test_dir
+	filename = "%s/stat-total.svg" % test_dir
 	g = graphing.init( title, filename)
 	g( "set xlabel 'CPU'")
 	graphing.histogram_percentage( data, 0, g, 15)

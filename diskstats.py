@@ -125,7 +125,7 @@ def plot( test_dir, data, intervall):
 
 		#plotting sectors/s
 		title =  "/proc/diskstats Sectors Reading/Writing %s" % name
-		filename = "%s/diskstats_sectors_%s.svg" % ( test_dir, name)
+		filename = "%s/diskstats-%s-sectors.svg" % ( test_dir, name)
 		g = graphing.init( title, filename)
 		g( "set key outside")
 		g( "set xlabel 'Runtime ( sec)'")
@@ -135,7 +135,7 @@ def plot( test_dir, data, intervall):
 
 		#plotting time spent on io
 		title =  "/proc/diskstats Time spent on IO %s" % name
-		filename = "%s/diskstats_time_io_%s.svg" % ( test_dir, name)
+		filename = "%s/diskstats-%s-time-io.svg" % ( test_dir, name)
 		g = graphing.init( title, filename)
 		g( "set key outside")
 		g( "set xlabel 'Runtime ( sec)'")

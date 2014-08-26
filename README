@@ -5,7 +5,7 @@ Installation
 
 	1. copy the wrstat directory to your Installation path 
 	2. link wrstat-run to e.g. /usr/local/bin
-	3. modify the wrstat/wrstat.config
+	3. modify the wrstat.config
 
 	Recompiling the kernel:
 		apt-get install ncurses-dev kernel-package

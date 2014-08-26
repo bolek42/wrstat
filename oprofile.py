@@ -12,13 +12,14 @@ import graphing
 #########################################
 
 def presampling( test_dir):
-	subprocess.call( [ "./oprofile-init.sh", test_dir])
+	print "to run oprofile, root access is required"
+	subprocess.call( [ "sudo", "./oprofile-init.sh", test_dir])
 
 def sample( test_dir, t):
 	pass
 
 def postsampling( test_dir):
-	subprocess.call( [ "./oprofile-deinit.sh", test_dir])
+	subprocess.call( [ "sudo", "./oprofile-deinit.sh", test_dir])
 
 
 #########################################
@@ -84,12 +85,12 @@ def plot( test_dir, data, intervall):
 	rows = data[ "rows"]
 	#separate plot 
 	for cpu in range( n_cpu):
-		file_prefix = "%s/cpu_%d" % (test_dir, cpu)
+		file_prefix = "%s/oprofile-cpu%d" % (test_dir, cpu)
 		title_prefix = "Total Runtime CPU %d" % cpu
 		plot_histogram( file_prefix, rows, "samples_cpu%d" % cpu, title_prefix, 0)
 
 	#aggregated plot
-	file_prefix = "%s/cpu_aggregate" % test_dir
+	file_prefix = "%s/oprofile-aggregate" % test_dir
 	title_prefix = "Total Runtime Aggregate"
 	plot_histogram( file_prefix, rows, "samples_aggregate", title_prefix, 0)
 
