@@ -27,7 +27,7 @@ def capture():
 	for thread in threads:
 		thread.join()
 
-	#print "sample"
+	print "sample"
 
 def signal_handler(signal, frame):
 	#print "captured signal " + str( signal)

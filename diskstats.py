@@ -102,8 +102,9 @@ def plot( test_dir, data, intervall):
 				samples[t][name]["sectors-read"])
 			write = ( samples[t + 1][name]["sectors-write"] -
 				samples[t][name]["sectors-write"])
-			read *= blocksize
-			write *= blocksize
+			#convert to MiB/s
+			read *= blocksize / 1048576.0
+			write *= blocksize / 1048576.0
 
 			sigma += read + write
 
@@ -130,7 +131,7 @@ def plot( test_dir, data, intervall):
 		g = graphing.init( title, filename)
 		g( "set key outside")
 		g( "set xlabel 'Runtime ( sec)'")
-		g( "set ylabel 'Sectors/s'")
+		g( "set ylabel 'MiB/s'")
 		graphing.series( sectors, g)
 		g.close()
 

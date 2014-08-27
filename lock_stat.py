@@ -190,13 +190,17 @@ def plot( test_dir, samples, intervall):
 def plot_detailed( test_dir, samples, intervall, lock_name, rank):
 	#calculating curves
 	waittime = []
+	holdtime = []
 	contentions = []
 	con_bounce = []
 	acquisitions = []
 	for t in range( len( samples) - 1):
 		if lock_name in samples[t]:
+			#wait and holdtime in ms
 			wt = ( samples[t+1][ lock_name]["waittime-total"] - 
-				samples[t][ lock_name]["waittime-total"]   )
+				samples[t][ lock_name]["waittime-total"]   ) / 1000.0
+			ht = ( samples[t+1][ lock_name]["holdtime-total"] - 
+				samples[t][ lock_name]["holdtime-total"]   ) / 1000.0
 
 			aq = ( samples[t+1][ lock_name]["acquisitions"] - 
 				samples[t][ lock_name]["acquisitions"]   )
@@ -206,12 +210,13 @@ def plot_detailed( test_dir, samples, intervall, lock_name, rank):
 				samples[t][ lock_name]["con-bounces"]   )
 
 		else:
-			wt = aq = ct = cb = 0.0
+			wt = ht = aq = ct = cb = 0.0
 
-		waittime.append( (t * intervall, wt * intervall))
-		acquisitions.append( (t * intervall, aq * intervall))
-		contentions.append( (t * intervall, ct * intervall))
-		con_bounce.append( (t * intervall, cb * intervall))
+		waittime.append( (t * intervall, wt / intervall))
+		holdtime.append( (t * intervall, ht / intervall))
+		acquisitions.append( (t * intervall, aq / intervall))
+		contentions.append( (t * intervall, ct / intervall))
+		con_bounce.append( (t * intervall, cb / intervall))
 
 	#build histogram data structure
 	locks = {}
@@ -234,9 +239,9 @@ def plot_detailed( test_dir, samples, intervall, lock_name, rank):
 	#Waittime subplot
 	g( "set origin 0,0.45")
 	g( "set size 0.5,0.5")
-	g( "set title 'Waittime'")
-	g( "set ylabel 'wait us/s'")
-	graphing.series( {"Waittime" : waittime}, g)
+	g( "set title 'Wait-/Holdtime'")
+	g( "set ylabel 'ms/s'")
+	graphing.series( {"Waittime" : waittime, "Holdtime" : holdtime}, g)
 
 	g("unset object 1")
 
