@@ -118,6 +118,9 @@ def parse_lock( row, offset):
 #########################################
 
 def plot( test_dir, samples, intervall):
+	if len( samples) < 2:
+		return
+
 	#preparing data
 	data = {}
 	for (class_name, lock_class) in samples[-1].iteritems():
