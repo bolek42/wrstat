@@ -10,9 +10,9 @@ colors = [
 		'#00FF88', '#88FF00', '#FF8800',
 		'#000000']
 
-def init( title, filename):
+def init( title, filename, size=(640, 480)):
 	g = Gnuplot.Gnuplot( debug=0)
-	g( "set terminal svg")
+	g( "set terminal svg size %d %d" % size)
 	g( "set output '%s'" % filename)
 	g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 

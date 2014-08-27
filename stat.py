@@ -17,7 +17,8 @@ def presampling( test_dir):
 	pass
 
 def sample( test_dir, t):
-	shutil.copy( "/proc/stat", "%s/samples/stat_%d" % ( test_dir, t))
+	if os.path.isfile( "/proc/stat"):
+		shutil.copy( "/proc/stat", "%s/samples/stat_%d" % ( test_dir, t))
 
 def postsampling( test_dir):
 	pass
@@ -99,21 +100,27 @@ def plot( test_dir, stat, intervall):
 	for key, value in stat[0]["cpu"].iteritems():
 		data[ key] = []
 
-	for cpu in range( stat[0]["n_cpu"]):
+	deleteme = 15
+	stat[0]["n_cpu"] = 4
+	for cpu in range( stat[0]["n_cpu"] * deleteme):
 		for key, value in data.iteritems():
-			value.append( stat[-1]["cpu%d" % cpu][key] -
-					stat[0]["cpu%d" % cpu][key])
+			value.append( stat[-1]["cpu%d" % (cpu/deleteme)][key] -
+					stat[0]["cpu%d" % (cpu/deleteme)][key])
 
 		#per cpu sampled
 		filename = "%s/stat-cpu%d.svg" % ( test_dir, cpu)
 		title = "/proc/stat CPU %d" % cpu
-		plot_stat_series( stat, "cpu%d" % cpu, filename, title, intervall)
-	
+		#FIXME plot_stat_series( stat, "cpu%d" % cpu, filename, title, intervall)
+
+	#determine size	
+	# 400 pixel offset
+	# min 20 pixel per bar
+	size = ( 400 + 20 * stat[0]["n_cpu"] * deleteme, 480)
 
 	#aggregated
 	title = "/proc/stat Total"
 	filename = "%s/stat-total.svg" % test_dir
-	g = graphing.init( title, filename)
+	g = graphing.init( title, filename, size)
 	g( "set xlabel 'CPU'")
 	graphing.histogram_percentage( data, 0, g, 15)
 	g.close()

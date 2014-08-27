@@ -15,7 +15,8 @@ def presampling( test_dir):
 	subprocess.call( [ "./lock_stat-reset.sh"])
 
 def sample( test_dir, t):
-	shutil.copy( "/proc/lock_stat", "%s/samples/lock_stat_%d" % ( test_dir, t))
+	if os.path.isfile( "/proc/lock_stat"):
+		shutil.copy( "/proc/lock_stat", "%s/samples/lock_stat_%d" % ( test_dir, t))
 
 def postsampling( test_dir):
 	pass

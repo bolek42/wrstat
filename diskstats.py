@@ -17,7 +17,8 @@ def presampling( test_dir):
 	subprocess.call( [ "./diskstats-init.sh", test_dir])
 
 def sample( test_dir, t):
-	shutil.copy( "/proc/diskstats", "%s/samples/diskstats_%d" % ( test_dir, t))
+	if os.path.isfile( "/proc/diskstats"):
+		shutil.copy( "/proc/diskstats", "%s/samples/diskstats_%d" % ( test_dir, t))
 
 def postsampling( test_dir):
 	pass
