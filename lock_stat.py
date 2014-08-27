@@ -152,7 +152,8 @@ def plot( test_dir, samples, intervall):
 	top = sorted( top, key=lambda x: x["waittime-total"], reverse = True)
 	
 	#time series and detailed plot for top locks
-	data = {}
+	wait = {}
+	hold = {}
 	rank = 1
 	for lock_class in top[0:8]:
 		lock_name = lock_class["name"]
@@ -162,19 +163,24 @@ def plot( test_dir, samples, intervall):
 		rank += 1
 
 		#preparing data
-		series = []
+		waittime = []
+		holdtime = []
 		for t in range( len( samples) - 1):
 			if lock_name in samples[t]:
 				wt = ( samples[t+1][ lock_name]["waittime-total"] - 
 					samples[t][ lock_name]["waittime-total"]   )
+				ht = ( samples[t+1][ lock_name]["holdtime-total"] - 
+					samples[t][ lock_name]["holdtime-total"]   )
 			else:
-				wt = 0.0
+				wt = ht = 0.0
 
-			series.append( (t * intervall, wt))
+			waittime.append( (t * intervall, wt / intervall))
+			holdtime.append( (t * intervall, ht / intervall))
 
-		data[ lock_class["name"]] = series
+		wait[ lock_class["name"]] = waittime
+		hold[ lock_class["name"]] = holdtime
 
-	#actual plotting
+	#actual plotting waittime
 	title = "/proc/lock_stat Waittime Top"
 	filename = "%s/lockstat_waittime_top.svg" % test_dir
 	g = graphing.init( title, filename)
@@ -183,8 +189,22 @@ def plot( test_dir, samples, intervall):
 	g( "set key horizontal")
 	g( "set key bmargin")
 	g( "set xlabel 'runtime ( sec)'")
-	g( "set ylabel 'usec/s'")
-	graphing.series( data, g)
+	g( "set ylabel 'ms/s'")
+	graphing.series( wait, g)
+	g.close()
+
+	
+	#actual plotting holdtime
+	title = "/proc/lock_stat Holdtime Top ( Ordered by Waittime)"
+	filename = "%s/lockstat_holdtime_top.svg" % test_dir
+	g = graphing.init( title, filename)
+	g( "set key outside")
+	g( "set key bottom right")
+	g( "set key horizontal")
+	g( "set key bmargin")
+	g( "set xlabel 'runtime ( sec)'")
+	g( "set ylabel 'ms/s'")
+	graphing.series( hold, g)
 	g.close()
 
 def plot_detailed( test_dir, samples, intervall, lock_name, rank):
