@@ -94,7 +94,7 @@ def plot( test_dir, data, intervall):
 		blocksize = data[ "blocksize"][phy_name]
 
 		#preparing data
-		sectors = { "read" : [], "write" : []}
+		io = { "read" : [], "write" : []}
 		time = { "read" : [], "write" : []}
 		sigma = 0.0
 		for t in range( len( samples) - 1):
@@ -109,8 +109,8 @@ def plot( test_dir, data, intervall):
 			sigma += read + write
 
 			#normalize
-			sectors[ "read"].append( ((t * intervall), read * intervall))
-			sectors[ "write"].append( ((t * intervall), write * intervall))
+			io[ "read"].append( ((t * intervall), read * intervall))
+			io[ "write"].append( ((t * intervall), write * intervall))
 
 			time_read = ( samples[t + 1][name]["time-read"] -
 				samples[t][name]["time-read"])
@@ -126,13 +126,13 @@ def plot( test_dir, data, intervall):
 			continue
 
 		#plotting sectors/s
-		title =  "/proc/diskstats Sectors Reading/Writing %s" % name
+		title =  "/proc/diskstats Reading/Writing %s" % name
 		filename = "%s/diskstats-%s-sectors.svg" % ( test_dir, name)
 		g = graphing.init( title, filename)
 		g( "set key outside")
 		g( "set xlabel 'Runtime ( sec)'")
 		g( "set ylabel 'MiB/s'")
-		graphing.series( sectors, g)
+		graphing.series( io, g)
 		g.close()
 
 		#plotting time spent on io
