@@ -5,6 +5,7 @@ import csv
 import shutil
 
 import graphing
+from utils import *
 
 def unit( u):
 	return float( u) / os.sysconf_names['SC_CLK_TCK'] 
@@ -18,7 +19,7 @@ def presampling( test_dir):
 
 def sample( test_dir, t):
 	if os.path.isfile( "/proc/stat"):
-		shutil.copy( "/proc/stat", "%s/samples/stat_%d" % ( test_dir, t))
+		copy_buffered( "/proc/stat", "%s/samples/stat_%d" % ( test_dir, t))
 
 def postsampling( test_dir):
 	pass
@@ -100,10 +101,12 @@ def plot( test_dir, stat, intervall):
 	for key, value in stat[0]["cpu"].iteritems():
 		data[ key] = []
 
+	#for all cpu...
 	for cpu in range( stat[0]["n_cpu"]):
 		for key, value in data.iteritems():
 			value.append( stat[-1]["cpu%d" % cpu][key] -
-					stat[0]["cpu%d" % cpu][key])
+							stat[0]["cpu%d" % cpu][key])
+
 
 		#per cpu sampled
 		filename = "%s/stat-cpu%d.svg" % ( test_dir, cpu)
@@ -130,9 +133,14 @@ def plot_stat_series( stat, cpu, filename, title, intervall):
 		data[ key] = []
 
 	for t in range( len( stat) - 1):
+		#normalize daa
+		sigma = 0.0
 		for key, value in data.iteritems():
-			value.append( ( t * intervall, stat[t + 1][cpu][key] -
-								stat[t][cpu][key]))
+			sigma += stat[t + 1][cpu][key] - stat[t][cpu][key]
+
+		for key, value in data.iteritems():
+			p = (stat[t + 1][cpu][key] - stat[t][cpu][key]) / sigma * 100.0
+			value.append( ( t * intervall, p))
 
 	#actual plotting
 	g = graphing.init( title, filename)
@@ -141,6 +149,7 @@ def plot_stat_series( stat, cpu, filename, title, intervall):
 	g( "set key horizontal")
 	g( "set key bmargin")
 	g( "set xlabel 'runtime ( sec)'")
+	g( "set xrange [0:110]")
 	g( "set ylabel 'Runtime %'")
 	graphing.series( data, g)
 	g.close()

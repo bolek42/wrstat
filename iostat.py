@@ -24,7 +24,7 @@ def postsampling( test_dir):
 
 def parse( test_dir):
 	if not os.path.isfile( "%s/iostat" % test_dir):
-		print "iostat nothing captured"
+		print "iostat: nothing captured"
 		return None
 
 	file = open( "%s/iostat" % test_dir, "r")
@@ -69,7 +69,6 @@ def plot( test_dir, data, intervall):
 				write[ name] = []
 			read[ name].append( device[ "read"] / 1024.0)
 			write[ name].append( device[ "write"] / 1024.0)
-		
 
 	#all disks reading
 	title =  "iostat all Reading"

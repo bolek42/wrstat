@@ -18,7 +18,7 @@ def presampling( test_dir):
 
 def sample( test_dir, t):
 	if os.path.isfile( "/proc/diskstats"):
-		shutil.copy( "/proc/diskstats", "%s/samples/diskstats_%d" % ( test_dir, t))
+		copy_buffered( "/proc/diskstats", "%s/samples/diskstats_%d" % ( test_dir, t))
 
 def postsampling( test_dir):
 	pass
@@ -125,7 +125,7 @@ def plot( test_dir, data, intervall):
 		if sigma == 0:
 			continue
 
-		#plotting sectors/s
+		#plotting MiB/s
 		title =  "/proc/diskstats Reading/Writing %s" % name
 		filename = "%s/diskstats-%s-sectors.svg" % ( test_dir, name)
 		g = graphing.init( title, filename)
