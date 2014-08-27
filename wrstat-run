@@ -42,11 +42,11 @@ sudo python "$tool_path/wrstat-sampling-deamon.py" "$test_dir"&
 sampling_deamon_pid=$!
 
 #waiting for sampling deamon to show up
-while [ ! -f "$test_dir/samplingdeamon.ready" ]
+while [ ! -f "$test_dir/sampling-deamon.ready" ]
 do
 	sleep 0.5
 done
-rm -f "$test_dir/samplingdeamon.ready"
+rm -f "$test_dir/sampling-deamon.ready"
 
 #running command
 echo eval $cmd

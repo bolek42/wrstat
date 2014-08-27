@@ -9,5 +9,5 @@ test_dir="$1"
 
 #init iostat
 if [ "$(which iostat 2>/dev/null)" != "" ]; then
-	kill $( "$test_dir/iostat.pid")
+	kill $( cat "$test_dir/iostat.pid")
 fi

@@ -27,7 +27,7 @@ def capture():
 	for thread in threads:
 		thread.join()
 
-	print "sample"
+	#print "sample"
 
 def signal_handler(signal, frame):
 	#print "captured signal " + str( signal)
@@ -70,5 +70,5 @@ if __name__ == "__main__":
 	for modname, module in modules.iteritems():
 			module.presampling( test_dir)
 
-	open( "%s/samplingdeamon.ready" % sys.argv[1], "w").close()
+	open( "%s/sampling-deamon.ready" % sys.argv[1], "w").close()
 	capture()
