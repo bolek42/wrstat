@@ -100,22 +100,20 @@ def plot( test_dir, stat, intervall):
 	for key, value in stat[0]["cpu"].iteritems():
 		data[ key] = []
 
-	deleteme = 15
-	stat[0]["n_cpu"] = 4
-	for cpu in range( stat[0]["n_cpu"] * deleteme):
+	for cpu in range( stat[0]["n_cpu"]):
 		for key, value in data.iteritems():
-			value.append( stat[-1]["cpu%d" % (cpu/deleteme)][key] -
-					stat[0]["cpu%d" % (cpu/deleteme)][key])
+			value.append( stat[-1]["cpu%d" % cpu][key] -
+					stat[0]["cpu%d" % cpu][key])
 
 		#per cpu sampled
 		filename = "%s/stat-cpu%d.svg" % ( test_dir, cpu)
 		title = "/proc/stat CPU %d" % cpu
-		#FIXME plot_stat_series( stat, "cpu%d" % cpu, filename, title, intervall)
+		plot_stat_series( stat, "cpu%d" % cpu, filename, title, intervall)
 
-	#determine size	
+	#determine width	
 	# 400 pixel offset
 	# min 20 pixel per bar
-	size = ( 400 + 20 * stat[0]["n_cpu"] * deleteme, 480)
+	size = ( 400 + 20 * stat[0]["n_cpu"], 480)
 
 	#aggregated
 	title = "/proc/stat Total"
