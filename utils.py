@@ -30,3 +30,13 @@ def load_modules( modnames):
 
 	return modules
 
+#this method firt reads src and writes then the data to dest,
+#so any lags on writing will not affect the sample rate
+def copy_buffered( src, dest):
+	f = open( src, "r")
+	data = f.read()
+	f.close()
+
+	f = open( dest, "w")
+	f.write( data)
+	f.close()

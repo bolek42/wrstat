@@ -2,7 +2,6 @@
 
 import os
 import csv
-import shutil
 import subprocess
 
 import graphing
@@ -16,7 +15,7 @@ def presampling( test_dir):
 
 def sample( test_dir, t):
 	if os.path.isfile( "/proc/lock_stat"):
-		shutil.copy( "/proc/lock_stat", "%s/samples/lock_stat_%d" % ( test_dir, t))
+		copy_buffered( "/proc/lock_stat", "%s/samples/lock_stat_%d" % ( test_dir, t))
 
 def postsampling( test_dir):
 	pass
