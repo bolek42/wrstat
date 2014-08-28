@@ -4,8 +4,10 @@ import csv
 import shutil
 import operator
 import subprocess
+from sets import Set
 
 import graphing
+from utils import *
 
 #########################################
 #       Sampling methods                #
@@ -76,23 +78,79 @@ def parse( test_dir):
 #       Plotting data                   #
 #########################################
 
-#FIXME term rows
 def plot( test_dir, data, intervall):
-	if data is None:
+	config = load_config( "%s/wrstat.config" % test_dir)
+
+	#plot unfiltred data
+	file_prefix = "%s/oprofile" % test_dir
+	filter_title = ""
+	plot_info( file_prefix, filter_title, data, intervall, 0)
+
+	#loading filter
+	filters = config[ "oprofile_filter"]
+	if isinstance( filters, basestring):
+		filters = [ filters]
+
+	#filtering data
+	filter_all = Set()
+	for f in filters:
+		print "%s: processing filter %s" % ( __file__, f)
+
+		#create filter set
+		s = Set()
+		for line in open( f, "r"):
+			s.add( line.strip())
+		filter_all |= s
+
+		file_prefix = "%s/oprofile-%s" % ( test_dir, f.replace( "/", "_"))
+		filter_title = "Filtred: %s" % f
+		plot_filter( data, s, intervall, file_prefix, filter_title)
+
+	file_prefix = "%s/oprofile-filter-all%s" % ( test_dir, f.replace( "/", "_"))
+	filter_title = "Filtred by all filers"
+	plot_filter( data, filter_all, intervall, file_prefix, filter_title)
+
+		
+def plot_filter( data, s, intervall, file_prefix, filter_title):
+	#determine discarded samples
+	discarded = {}
+	for key in data["rows"][0]:
+		if key == "app_name" or key == "symbol_name":
+			continue
+		discarded[ key] = 0.0
+
+	rows = []
+	for row in data["rows"]:
+		if row[ "symbol_name"] in s:
+			rows.append( row)
+		else:
+			for key in data["rows"][0]:
+				if key == "app_name" or key == "symbol_name":
+					continue
+				discarded[ key] += row[ key]
+
+	print rows
+	filtred = { "n_cpu" : data[ "n_cpu"], "rows" : rows}
+	plot_info( file_prefix, filter_title, filtred, intervall, discarded)
+
+		
+
+def plot_info( prefix, filter_title, data, intervall, discarded):
+	if data is None or len( data["rows"]) == 0:
 		return
 
 	n_cpu = data[ "n_cpu"]
 	rows = data[ "rows"]
 	#separate plot 
 	for cpu in range( n_cpu):
-		file_prefix = "%s/oprofile-cpu%d" % (test_dir, cpu)
-		title_prefix = "Total Runtime CPU %d" % cpu
-		plot_histogram( file_prefix, rows, "samples_cpu%d" % cpu, title_prefix, 0)
+		file_prefix = "%s-cpu%d" % ( prefix, cpu)
+		title_prefix = "Total Runtime CPU %d %s" % ( cpu, filter_title)
+		plot_histogram( file_prefix, rows, "samples_cpu%d" % cpu, title_prefix, discarded)
 
 	#aggregated plot
-	file_prefix = "%s/oprofile-aggregate" % test_dir
-	title_prefix = "Total Runtime Aggregate"
-	plot_histogram( file_prefix, rows, "samples_aggregate", title_prefix, 0)
+	file_prefix = "%s-aggregate" % prefix
+	title_prefix = "Total Runtime Aggregate %s" % filter_title
+	plot_histogram( file_prefix, rows, "samples_aggregate", title_prefix, discarded)
 
 def plot_histogram( file_prefix, rows, key, title_prefix, discarded):
 	rows = sorted( rows, key=lambda row: row[key])
