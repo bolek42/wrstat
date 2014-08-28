@@ -83,10 +83,11 @@ def histogram_percentage( data, discarded, g, title_len=40):
 	#determine total sum of all bars including discarded samples
 	sigma = None
 	n_samples = 0
+
 	for key, values in data.iteritems():
 		if sigma is None:
 			n_samples = len( values)
-			sigma = [ 0.0] * n_samples
+			sigma = [ discarded] * n_samples #TODO array support
 
 		if len( values) != n_samples:
 			print "Graphing Error: invalid number of samples in plot_histogram_percentage"
@@ -96,9 +97,17 @@ def histogram_percentage( data, discarded, g, title_len=40):
 			sigma[ i] += values[i]
 
 	#normalize values to percentage
-	others = [100.0] * n_samples
+	others = [0.0] * n_samples
 	percentage = [ 0.0] * n_samples
 	normalized = {}
+
+	#in respect to discarded samples
+	yrange  = 0
+	for i in range( n_samples):
+		p = 100.0 - discarded * 100.0 / sigma[i]
+		others[i] = p
+		yrange = max( yrange, p)
+
 	for key, values in sorted( data.iteritems(), key=lambda (key, value): value, reverse=True)[0:16]:
 		#over all samples
 		for i in range( n_samples):
@@ -125,7 +134,7 @@ def histogram_percentage( data, discarded, g, title_len=40):
 			normalized[ "others"] = others
 
 	#actual gnuplot stuff
-	g( "set yrange [0:100]")
+	g( "set yrange [0:%f]" % yrange)
 	g( "set ylabel 'Runtime Percentage'")
 
 	histogram( normalized, g, title_len)

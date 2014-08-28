@@ -82,9 +82,15 @@ def plot( test_dir, data, intervall):
 	config = load_config( "%s/wrstat.config" % test_dir)
 
 	#plot unfiltred data
+	discarded = {}
+	for key in data["rows"][0]:
+		if key == "app_name" or key == "symbol_name":
+			continue
+		discarded[ key] = 0.0
+
 	file_prefix = "%s/oprofile" % test_dir
 	filter_title = ""
-	plot_info( file_prefix, filter_title, data, intervall, 0)
+	plot_info( file_prefix, filter_title, data, intervall, discarded)
 
 	#loading filter
 	filters = config[ "oprofile_filter"]
@@ -94,6 +100,10 @@ def plot( test_dir, data, intervall):
 	#filtering data
 	filter_all = Set()
 	for f in filters:
+		if not os.path.isfile( f):
+			print "%s: missing filter %s" % ( __file__, f)
+			continue
+
 		print "%s: processing filter %s" % ( __file__, f)
 
 		#create filter set
@@ -120,18 +130,20 @@ def plot_filter( data, s, intervall, file_prefix, filter_title):
 		discarded[ key] = 0.0
 
 	rows = []
+	has_data = False
 	for row in data["rows"]:
 		if row[ "symbol_name"] in s:
 			rows.append( row)
+			has_data = True
 		else:
 			for key in data["rows"][0]:
 				if key == "app_name" or key == "symbol_name":
 					continue
 				discarded[ key] += row[ key]
 
-	print rows
-	filtred = { "n_cpu" : data[ "n_cpu"], "rows" : rows}
-	plot_info( file_prefix, filter_title, filtred, intervall, discarded)
+	if has_data:
+		filtred = { "n_cpu" : data[ "n_cpu"], "rows" : rows}
+		plot_info( file_prefix, filter_title, filtred, intervall, discarded)
 
 		
 
@@ -157,14 +169,19 @@ def plot_histogram( file_prefix, rows, key, title_prefix, discarded):
 
 	#prepare data for symbol names
 	data = {}
+	sigma = 0.0
 	for row in rows:
+		sigma += float( row[key])
 		data[ row["symbol_name"]] = [float( row[key])]
+
+	if sigma == 0:
+		return
 
 	#actual plotting
 	title = "Oprofile %s (Symbol Names)" % title_prefix
 	filename = "%s_sym.svg" % file_prefix
 	g = graphing.init( title, filename)
-	graphing.histogram_percentage( data, discarded, g)
+	graphing.histogram_percentage( data, discarded[key], g)
 	g.close()
 
 	#prepare data for app names
@@ -183,5 +200,5 @@ def plot_histogram( file_prefix, rows, key, title_prefix, discarded):
 	title = "Oprofile %s (App Names)" % title_prefix
 	filename = "%s_app.svg" % file_prefix
 	g = graphing.init( title, filename)
-	graphing.histogram_percentage( data, discarded, g)
+	graphing.histogram_percentage( data, discarded[key], g)
 	g.close()
