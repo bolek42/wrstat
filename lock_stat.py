@@ -5,6 +5,7 @@ import csv
 import subprocess
 
 import graphing
+from utils import *
 
 #########################################
 #       Sampling methods                #
