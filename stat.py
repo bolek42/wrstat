@@ -149,7 +149,7 @@ def plot_stat_series( stat, cpu, filename, title, intervall):
 	g( "set key horizontal")
 	g( "set key bmargin")
 	g( "set xlabel 'runtime ( sec)'")
-	g( "set xrange [0:110]")
+	g( "set yrange [0:103]")
 	g( "set ylabel 'Runtime %'")
 	graphing.series( data, g)
 	g.close()
