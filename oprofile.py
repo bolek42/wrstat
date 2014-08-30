@@ -79,6 +79,9 @@ def parse( test_dir):
 #########################################
 
 def plot( test_dir, data, intervall):
+	if data is None:
+		return
+
 	config = load_config( "%s/wrstat.config" % test_dir)
 
 	#plot unfiltred data
