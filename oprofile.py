@@ -79,7 +79,7 @@ def parse( test_dir):
 #########################################
 
 def plot( test_dir, data, intervall):
-	if data is None:
+	if data is None or len( data["rows"]) == 0:
 		return
 
 	config = load_config( "%s/wrstat.config" % test_dir)
