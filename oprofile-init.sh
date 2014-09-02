@@ -25,6 +25,7 @@ if [ "$(which opcontrol 2>/dev/null)" != "" ]; then
 	then
 		opcontrol --start --no-vmlinux --session-dir="$test_dir/oprofile_data/"
 	else
-		opcontrol --start --vmlinux="$vmlinux" --session-dir="$test_dir/oprofile_data/"
+		ln -sf "$vmlinux" "$test_dir/vmlinux"
+		opcontrol --start --vmlinux="$test_dir/vmlinux" --session-dir="$test_dir/oprofile_data/"
 	fi
 fi
