@@ -9,13 +9,13 @@ from utils import *
 #########################################
 
 def presampling( test_dir):
-	pass
+    pass
 
 def sample( test_dir, t):
-	pass
+    pass
 
 def postsampling( test_dir):
-	pass
+    pass
 
 
 #########################################
@@ -23,15 +23,15 @@ def postsampling( test_dir):
 #########################################
 
 def parse( test_dir):
-	#t = 0
-	#samples = []
-	#while os.path.isfile( "%s/samples/modulename_%d" % ( test_dir, t)):
-	#	sample = parse_sample( "%s/samples/module_%d" % ( test_dir, t)) #TODO Implement
-	#	samples.append( sample)
+    #t = 0
+    #samples = []
+    #while os.path.isfile( "%s/samples/modulename_%d" % ( test_dir, t)):
+    #    sample = parse_sample( "%s/samples/module_%d" % ( test_dir, t)) #TODO Implement
+    #    samples.append( sample)
 
-	#	t+= 1
+    #    t+= 1
 
-	return None
+    return None
 
 
 
@@ -40,4 +40,4 @@ def parse( test_dir):
 #########################################
 
 def plot( test_dir, data, intervall):
-	pass
+    pass
