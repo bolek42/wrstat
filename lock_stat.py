@@ -12,10 +12,13 @@ from utils import *
 #########################################
 
 def presampling( test_dir):
-    subprocess.call( [ "./lock_stat-reset.sh"])
+    if os.getuid() == 0:
+        subprocess.call( [ "./lock_stat-reset.sh"])
+    else:
+        print "ERROR: lock_stat requires root previleges"
 
 def sample( test_dir, t):
-    if os.path.isfile( "/proc/lock_stat"):
+    if os.path.isfile( "/proc/lock_stat") and os.getuid() == 0:
         copy_buffered( "/proc/lock_stat", "%s/samples/lock_stat_%d" % ( test_dir, t))
 
 def postsampling( test_dir):
@@ -45,7 +48,7 @@ def parse_sample( filename):
     #remove whitespaces and empty
     raw = map( lambda row: filter(lambda s: s != '', row), raw)
     #lines discard version and header
-    rows = raw[ 4::] 
+    rows = raw[ 4::]
 
     #read keys from header line
     keys = []
@@ -102,7 +105,7 @@ def parse_lock_class( row, keys):
 
     for key, value in zip(keys, data):
         usage[ key] = float( value)
-        
+
     return usage
 
 def parse_lock( row, offset):
@@ -150,7 +153,7 @@ def plot( test_dir, samples, intervall):
     for lock_name, lock_class in samples[-1].iteritems():
         top.append( lock_class)
     top = sorted( top, key=lambda x: x["waittime-total"], reverse = True)
-    
+
     #time series and detailed plot for top locks
     wait = {}
     hold = {}
@@ -167,9 +170,9 @@ def plot( test_dir, samples, intervall):
         holdtime = []
         for t in range( len( samples) - 1):
             if lock_name in samples[t]:
-                wt = ( samples[t+1][ lock_name]["waittime-total"] - 
+                wt = ( samples[t+1][ lock_name]["waittime-total"] -
                     samples[t][ lock_name]["waittime-total"]   )
-                ht = ( samples[t+1][ lock_name]["holdtime-total"] - 
+                ht = ( samples[t+1][ lock_name]["holdtime-total"] -
                     samples[t][ lock_name]["holdtime-total"]   )
             else:
                 wt = ht = 0.0
@@ -193,7 +196,7 @@ def plot( test_dir, samples, intervall):
     graphing.series( wait, g)
     g.close()
 
-    
+
     #actual plotting holdtime
     title = "/proc/lock_stat Holdtime Top ( Ordered by Waittime)"
     filename = "%s/lockstat_holdtime_top.svg" % test_dir
@@ -217,16 +220,16 @@ def plot_detailed( test_dir, samples, intervall, lock_name, rank):
     for t in range( len( samples) - 1):
         if lock_name in samples[t]:
             #wait and holdtime in ms
-            wt = ( samples[t+1][ lock_name]["waittime-total"] - 
+            wt = ( samples[t+1][ lock_name]["waittime-total"] -
                 samples[t][ lock_name]["waittime-total"]   ) / 1000.0
-            ht = ( samples[t+1][ lock_name]["holdtime-total"] - 
+            ht = ( samples[t+1][ lock_name]["holdtime-total"] -
                 samples[t][ lock_name]["holdtime-total"]   ) / 1000.0
 
-            aq = ( samples[t+1][ lock_name]["acquisitions"] - 
+            aq = ( samples[t+1][ lock_name]["acquisitions"] -
                 samples[t][ lock_name]["acquisitions"]   )
-            ct = ( samples[t+1][ lock_name]["contentions"] - 
+            ct = ( samples[t+1][ lock_name]["contentions"] -
                 samples[t][ lock_name]["contentions"]   )
-            cb = ( samples[t+1][ lock_name]["con-bounces"] - 
+            cb = ( samples[t+1][ lock_name]["con-bounces"] -
                 samples[t][ lock_name]["con-bounces"]   )
 
         else:
@@ -249,7 +252,7 @@ def plot_detailed( test_dir, samples, intervall, lock_name, rank):
         symbol_name = lock["symbol"]
         con_bounces = lock["con-bounces"]
         locks[ "(w) %s" % symbol_name] = [ con_bounces]
-        
+
     #actual plotting
     title = "/proc/lock_stat Top %d: %s" % ( rank, lock_name)
     filename =  "%s/lock_stat-top-%d.svg" % ( test_dir, rank)

@@ -14,14 +14,17 @@ from utils import *
 #########################################
 
 def presampling( test_dir):
-    print "to run oprofile, root access is required"
-    subprocess.call( [ "sudo", "./oprofile-init.sh", test_dir])
+    if os.getuid() == 0:
+        subprocess.call( [ "bash", "./oprofile-init.sh", test_dir])
+    else:
+        print "ERROR: Oprofile requires root previleges"
 
 def sample( test_dir, t):
     pass
 
 def postsampling( test_dir):
-    subprocess.call( [ "sudo", "./oprofile-deinit.sh", test_dir])
+    if os.getuid() == 0:
+        subprocess.call( [ "bash", "./oprofile-deinit.sh", test_dir])
 
 
 #########################################
@@ -58,7 +61,7 @@ def parse( test_dir):
             line[ "samples_cpu%d" % cpu] = sample
             line[ "runtime_cpu%d" % cpu] = runtime
             samples_aggregate += sample
-            runtime_aggregate += runtime        
+            runtime_aggregate += runtime
 
         line[ "samples_aggregate"] = samples_aggregate
         line[ "runtime_aggregate"] = runtime_aggregate
@@ -123,7 +126,7 @@ def plot( test_dir, data, intervall):
     filter_title = "Filtred by all filers"
     plot_filter( data, filter_all, intervall, file_prefix, filter_title)
 
-        
+
 def plot_filter( data, s, intervall, file_prefix, filter_title):
     #determine discarded samples
     discarded = {}
@@ -148,7 +151,7 @@ def plot_filter( data, s, intervall, file_prefix, filter_title):
         filtred = { "n_cpu" : data[ "n_cpu"], "rows" : rows}
         plot_info( file_prefix, filter_title, filtred, intervall, discarded)
 
-        
+
 
 def plot_info( prefix, filter_title, data, intervall, discarded):
     if data is None or len( data["rows"]) == 0:
@@ -156,7 +159,7 @@ def plot_info( prefix, filter_title, data, intervall, discarded):
 
     n_cpu = data[ "n_cpu"]
     rows = data[ "rows"]
-    #separate plot 
+    #separate plot
     for cpu in range( n_cpu):
         file_prefix = "%s-cpu%d" % ( prefix, cpu)
         title_prefix = "Total Runtime CPU %d %s" % ( cpu, filter_title)

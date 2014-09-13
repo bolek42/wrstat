@@ -25,6 +25,9 @@ if [ "$(which $2 2>/dev/null)" = "" ]; then
 fi
 cmd=${@:2:$#}
 
+runasroot="$( cat "$test_dir/wrstat.config" | grep "runasroot" | cut -d " "  -f 2-)"
+runasroot=${runasroot,,}
+
 #prepare testdir
 mkdir -p "$test_dir"
 if [ ! -d "$test_dir" ]; then
@@ -38,7 +41,11 @@ mkdir -p "$test_dir/samples"
 rm -f "$test_dir/samples"/*
 
 #starting sampling deamon
-sudo python "$tool_path/wrstat-sampling-deamon.py" "$test_dir"&
+if [ $runasroot == "true" ]; then
+  sudo python "$tool_path/wrstat-sampling-deamon.py" "$test_dir"&
+else
+  python "$tool_path/wrstat-sampling-deamon.py" "$test_dir"&
+fi
 sampling_deamon_pid=$!
 
 #waiting for sampling deamon to show up
@@ -54,15 +61,21 @@ eval $cmd &> "$test_dir/output"
 
 #deinit sampling deamon
 echo "killing sampling deamon..."
-sudo kill -SIGTERM $sampling_deamon_pid
+if [ $runasroot == "true" ]; then
+  sudo kill -SIGTERM $sampling_deamon_pid
+else
+  kill -SIGTERM $sampling_deamon_pid
+fi
 wait $sampling_deamon_pid
 
 #chown everything in test_dir to current user
-user=$USER
-group=$(id -gn)
-sudo chown -R $user:$group "$test_dir"
-find "$test_dir" -type d -exec chmod 755 {} \;
-find "$test_dir" -type f -exec chmod 644 {} \;
+if [ $runasroot == "true" ]; then
+  user=$USER
+  group=$(id -gn)
+  sudo chown -R $user:$group "$test_dir"
+  find "$test_dir" -type d -exec chmod 755 {} \;
+  find "$test_dir" -type f -exec chmod 644 {} \;
+fi
 
 #postprocessing
 python "$tool_path/wrstat-parser.py" "$test_dir"
