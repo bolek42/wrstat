@@ -10,14 +10,26 @@ if [ $# -ne 1 ]; then
 fi
 test_dir="$1"
 
+#read config file
+use_operf="$( cat "$test_dir/wrstat.config" | grep "oprofile_use_operf" | cut -d " "  -f 2-)"
+use_operf=${use_operf,,}
+vmlinux="$( cat "$test_dir/wrstat.config" | grep "oprofile_vmlinux" | cut -d " "  -f 2-)"
 
-#deinit oprofile
-if [ "$(which opcontrol 2>/dev/null)" != "" ]; then
-    echo "deinit oprofile"
-    kernel_mod="$( cat "$test_dir/wrstat.config" | grep "oprofile_kernel_mod" | cut -d " "  -f 2-)"
-    opcontrol --stop
-    opcontrol --dump
-    opcontrol --shutdown
-    #opreport --session-dir="$test_dir/oprofile_data/" -p $kernel_mod -l > "$test_dir/oprof_results"
-    opreport --session-dir="$test_dir/oprofile_data/" -l > "$test_dir/samples/oprofile"
+#check if we should use operf or opcontrol (deprecated)
+if [ $use_operf == "true" ]; then
+    if [ "$(which operf 2>/dev/null)" != "" ]; then
+        kill -SIGINT $(cat "$test_dir/operf.pid")
+        opreport --session-dir="$test_dir/oprofile_data/" -l > "$test_dir/samples/oprofile"
+    fi
+else
+    #deinit oprofile
+    if [ "$(which opcontrol 2>/dev/null)" != "" ]; then
+        echo "deinit oprofile"
+        kernel_mod="$( cat "$test_dir/wrstat.config" | grep "oprofile_kernel_mod" | cut -d " "  -f 2-)"
+        opcontrol --stop
+        opcontrol --dump
+        opcontrol --shutdown
+        #opreport --session-dir="$test_dir/oprofile_data/" -p $kernel_mod -l > "$test_dir/oprof_results"
+        opreport --session-dir="$test_dir/oprofile_data/" -l > "$test_dir/samples/oprofile"
+    fi
 fi
