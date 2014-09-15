@@ -2,6 +2,7 @@ modules diskstats lock_stat stat oprofile iostat
 runasroot true
 intervall 1
 oprofile_use_operf True
-oprofile_vmlinux /usr/lib/debug/boot/vmlinux-3.13.0-24-generic
-oprofile_kernel_mod /home/hammel/linux-stable/
+oprofile_vmlinux /path/to/vmlinux/if/available/vmlinux
+oprofile_kernel_mod /path/to/kernel/source/if/available/
 oprofile_filter filters/mm_filter filters/block_filter filters/xfs_filter filters/fs_filter filters/sched_filter filters/xfs_filter2 filters/rb_filter filters/radix_filter filters/wait_filter
+

@@ -15,15 +15,18 @@ use_operf="$( cat "$test_dir/wrstat.config" | grep "oprofile_use_operf" | cut -d
 use_operf=${use_operf,,}
 vmlinux="$( cat "$test_dir/wrstat.config" | grep "oprofile_vmlinux" | cut -d " "  -f 2-)"
 
+rm -rf "$test_dir/oprofile_data/" &>/dev/null
+mkdir "$test_dir/oprofile_data/"
+
 #check if we should use operf or opcontrol (deprecated)
 if [ $use_operf == "true" ]; then
     if [ "$(which operf 2>/dev/null)" != "" ]; then
         #starting operf
         if [ "$vmlinux" == "" ];then
-            operf --systemwide --separate-cpu --session-dir="$test_dir/oprofile_data/"&
+            operf --system-wide --separate-cpu --session-dir="$test_dir/oprofile_data/"&
         else
             ln -sf "$vmlinux" "$test_dir/vmlinux"
-            operf --systemwide --separate-cpu --vmlinux="$test_dir/vmlinux" --session-dir="$test_dir/oprofile_data/"&
+            operf --system-wide --separate-cpu --vmlinux="$test_dir/vmlinux" --session-dir="$test_dir/oprofile_data/"&
         fi
         echo $! > "$test_dir/operf.pid"
     fi
@@ -32,7 +35,6 @@ else
     if [ "$(which opcontrol 2>/dev/null)" != "" ]; then
         echo "starting oprofile"
 
-        rm -rf "$test_dir/oprofile_data/" &>/dev/null
         opcontrol --reset
         opcontrol --deinit
         modprobe oprofile timer=1

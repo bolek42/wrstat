@@ -11,6 +11,7 @@ modules = []
 t = 0
 test_dir = ""
 run = True
+_file = __file__
 
 def capture():
     global t
@@ -35,6 +36,7 @@ def signal_handler(signal, frame):
     print "captured %d samples" % t
     print "running postsampling..."
     for modname, module in modules.iteritems():
+        print "%s: deinitialize %s" % ( _file, modname)
         module.postsampling( test_dir)
 
     #stopping sampling deamon
@@ -68,6 +70,7 @@ if __name__ == "__main__":
 
     #starting capture
     for modname, module in modules.iteritems():
+            print "%s: initialize %s" % ( __file__, modname)
             module.presampling( test_dir)
 
     open( "%s/sampling-deamon.ready" % sys.argv[1], "w").close()

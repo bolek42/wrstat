@@ -25,15 +25,19 @@ if [ "$(which $2 2>/dev/null)" = "" ]; then
 fi
 cmd=${@:2:$#}
 
-runasroot="$( cat "$test_dir/wrstat.config" | grep "runasroot" | cut -d " "  -f 2-)"
-runasroot=${runasroot,,}
-
 #prepare testdir
 mkdir -p "$test_dir"
 if [ ! -d "$test_dir" ]; then
 	echo "ERROR: failed to created $test_dir directory."
 	exit 0
 fi
+
+if [ ! -f "$tool_path/wrstat.config" ]; then
+	echo "ERROR: could not found $tool_path/wrstat.config"
+	echo "ERROR: for example config file see $tool_path/wrstat.config.template"
+	exit 0
+fi
+
 cp "$tool_path/wrstat.config" "$test_dir/wrstat.config"
 echo "$cmd" > "$test_dir/cmd"
 sample_dir="$test_dir/samples"
@@ -41,6 +45,9 @@ mkdir -p "$test_dir/samples"
 rm -f "$test_dir/samples"/*
 
 #starting sampling deamon
+runasroot="$( cat "$test_dir/wrstat.config" | grep "runasroot" | cut -d " "  -f 2-)"
+runasroot=${runasroot,,}
+
 if [ $runasroot == "true" ]; then
   sudo python "$tool_path/wrstat-sampling-deamon.py" "$test_dir"&
 else
