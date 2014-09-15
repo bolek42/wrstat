@@ -13,12 +13,12 @@ colors = [
 def init( title, filename, size=(640, 480)):
     g = Gnuplot.Gnuplot( debug=0)
     g( "set terminal svg size %d %d" % size)
-    g( "set output '%s'" % filename)
+    g( "set output \"%s\"" % filename)
     g( "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb'white' behind")
 
     #set title on center of the screen
     g( "set title ' '")
-    g( "set label 1 '%s' at screen 0.5,0.95 center" % title)
+    g( "set label 1 '%s' at screen 0.5,0.95 center" % title_escape( title))
     return g
 
 """
@@ -35,7 +35,7 @@ def series( data, g):
     i = 0
     for name, series in data.iteritems():
         plots.append( Gnuplot.PlotItems.Data( series,
-            with_="lines linecolor rgb '%s'" % colors[ i % len( colors)], title=str(name)))
+            with_="lines linecolor rgb '%s'" % colors[ i % len( colors)], title=title_escape(str(name))))
         i += 1
 
     g.plot( *plots)
@@ -57,7 +57,7 @@ def histogram( data, g, title_len=40):
         key = key[ 0: title_len]
         key += " " * ( title_len - len( key))
 
-        pl = Gnuplot.PlotItems.Data( value, title=key)
+        pl = Gnuplot.PlotItems.Data( value, title=title_escape(key))
         histogram.append( pl)
 
         if len( value) > n_samples:
@@ -138,4 +138,9 @@ def histogram_percentage( data, discarded, g, title_len=40):
     g( "set ylabel 'Runtime Percentage'")
 
     histogram( normalized, g, title_len)
+
+#we need this to avoid "gnuplot injection" ...
+def title_escape( title):
+    title = title.replace("\"", "\\\"")
+    return title.replace("\'", "\\\'")
 
