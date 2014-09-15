@@ -1,0 +1,21 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+    echo "This is a basic script to extract function names from ELF binaries ( .o, .ko ...),"
+    echo "that can be used by wrstat as a filter"
+    echo ""
+	echo "Usage: $0 list of ELF binaries"
+	exit 0
+fi
+
+#we are using objdump to extract the symboltable
+objdump -t $@ | \
+while read line; do
+    segment=$(echo $line | cut -d " " -f 4)
+    symbol=$(echo $line | cut -d " " -f 6)
+
+    #if the symbol is inside the .text segment it is a function
+    if [ "$segment" == ".text" ] && [ "$symbol" != ".text" ]; then
+        echo $symbol
+    fi
+done
