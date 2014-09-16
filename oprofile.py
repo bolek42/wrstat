@@ -9,6 +9,8 @@ from sets import Set
 import graphing
 from utils import *
 
+#TODO callgraph. extra filtred callers and callee graphs?
+
 #########################################
 #       Sampling methods                #
 #########################################
@@ -118,11 +120,11 @@ def plot( test_dir, data, intervall):
             s.add( line.strip())
         filter_all |= s
 
-        file_prefix = "%s/oprofile-%s" % ( test_dir, f.replace( "/", "_"))
+        file_prefix = "%s/oprofile-filter-%s" % ( test_dir, f.replace( "/", "_"))
         filter_title = "Filtred: %s" % f
         plot_filter( data, s, intervall, file_prefix, filter_title)
 
-    file_prefix = "%s/oprofile-filter-all%s" % ( test_dir, f.replace( "/", "_"))
+    file_prefix = "%s/oprofile-filter-all" % ( test_dir)
     filter_title = "Filtred by all filers"
     plot_filter( data, filter_all, intervall, file_prefix, filter_title)
 
@@ -185,7 +187,7 @@ def plot_histogram( file_prefix, rows, key, title_prefix, discarded):
 
     #actual plotting
     title = "Oprofile %s (Symbol Names)" % title_prefix
-    filename = "%s_sym.svg" % file_prefix
+    filename = "%s-sym.svg" % file_prefix
     g = graphing.init( title, filename)
     graphing.histogram_percentage( data, discarded[key], g)
     g.close()
@@ -204,7 +206,7 @@ def plot_histogram( file_prefix, rows, key, title_prefix, discarded):
 
     #actual plotting
     title = "Oprofile %s (App Names)" % title_prefix
-    filename = "%s_app.svg" % file_prefix
+    filename = "%s-app.svg" % file_prefix
     g = graphing.init( title, filename)
     graphing.histogram_percentage( data, discarded[key], g)
     g.close()

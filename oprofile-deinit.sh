@@ -14,22 +14,35 @@ test_dir="$1"
 use_operf="$( cat "$test_dir/wrstat.config" | grep "oprofile_use_operf" | cut -d " "  -f 2-)"
 use_operf=${use_operf,,}
 vmlinux="$( cat "$test_dir/wrstat.config" | grep "oprofile_vmlinux" | cut -d " "  -f 2-)"
+missing_binaries="$( cat "$test_dir/wrstat.config" | grep "oprofile_missing_binaries" | cut -d " "  -f 2-)"
 
 #check if we should use operf or opcontrol (deprecated)
 if [ $use_operf == "true" ]; then
     if [ "$(which operf 2>/dev/null)" != "" ]; then
+        #deinit OProfile using operf
         kill -SIGINT $(cat "$test_dir/operf.pid")
-        opreport --session-dir="$test_dir/oprofile_data/" -l > "$test_dir/samples/oprofile"
+        rm "$test_dir/operf.pid"
+
+        #dumping results
+        if [ "$missing_binaries" == "" ]; then
+            opreport --session-dir="$test_dir/oprofile_data/" -l > "$test_dir/samples/oprofile"
+        else
+            opreport --session-dir="$test_dir/oprofile_data/" -p "$missing_binaries" -l > "$test_dir/samples/oprofile"
+        fi
     fi
 else
     #deinit oprofile
     if [ "$(which opcontrol 2>/dev/null)" != "" ]; then
-        echo "deinit oprofile"
-        kernel_mod="$( cat "$test_dir/wrstat.config" | grep "oprofile_kernel_mod" | cut -d " "  -f 2-)"
+        #deinit OProfile using opcontrol
         opcontrol --stop
         opcontrol --dump
         opcontrol --shutdown
-        #opreport --session-dir="$test_dir/oprofile_data/" -p $kernel_mod -l > "$test_dir/oprof_results"
-        opreport --session-dir="$test_dir/oprofile_data/" -l > "$test_dir/samples/oprofile"
+
+        #dumping results
+        if [ "$missing_binaries" == "" ]; then
+            opreport --session-dir="$test_dir/oprofile_data/" -l > "$test_dir/samples/oprofile"
+        else
+            opreport --session-dir="$test_dir/oprofile_data/" -p "$missing_binaries" -l > "$test_dir/samples/oprofile"
+        fi
     fi
 fi
