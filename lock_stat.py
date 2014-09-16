@@ -136,11 +136,11 @@ def plot( test_dir, samples, intervall):
     graphing.histogram_percentage( data, 0, g)
     g.close()
 
-
     #preparing data
     data = {}
     for (class_name, lock_class) in samples[-1].iteritems():
         data[ class_name] = [ lock_class[ "holdtime-total"]]
+
     #actual plotting
     title =  "/proc/lock_stat Holdtime Total"
     filename = "%s/lock_stat-holdtime.svg" % test_dir
@@ -169,7 +169,7 @@ def plot( test_dir, samples, intervall):
         waittime = []
         holdtime = []
         for t in range( len( samples) - 1):
-            if lock_name in samples[t]:
+            if lock_name in samples[t] and lock_name in samples[t+1]:
                 wt = ( samples[t+1][ lock_name]["waittime-total"] -
                     samples[t][ lock_name]["waittime-total"]   )
                 ht = ( samples[t+1][ lock_name]["holdtime-total"] -
@@ -218,7 +218,7 @@ def plot_detailed( test_dir, samples, intervall, lock_name, rank):
     con_bounce = []
     acquisitions = []
     for t in range( len( samples) - 1):
-        if lock_name in samples[t]:
+        if lock_name in samples[t] and lock_name in samples[t+1]:
             #wait and holdtime in ms
             wt = ( samples[t+1][ lock_name]["waittime-total"] -
                 samples[t][ lock_name]["waittime-total"]   ) / 1000.0
