@@ -67,11 +67,6 @@ def signal_handler(signal, frame):
         print "%s: deinitialize %s" % ( _file, modname)
         module.postsampling( test_dir)
 
-    #just to be safe, waiting for all threads to exit
-    for thread in threading.enumerate():
-        if thread != threading.current_thread():
-            thread.join()
-
 
 if __name__ == "__main__":
     if len( sys.argv) != 2:
