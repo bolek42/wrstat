@@ -44,36 +44,37 @@ sample_dir="$test_dir/samples"
 mkdir -p "$test_dir/samples"
 rm -f "$test_dir/samples"/*
 
-#starting sampling deamon
+#starting deamon
 runasroot="$( cat "$test_dir/wrstat.config" | grep "runasroot" | cut -d " "  -f 2-)"
 runasroot=${runasroot,,}
 
+rm -f "$test_dir/deamon.ready" &> /dev/null
 if [ $runasroot == "true" ]; then
-  sudo python "$tool_path/wrstat-sampling-deamon.py" "$test_dir"&
+  sudo python "$tool_path/wrstat-deamon.py" "$test_dir" &
 else
-  python "$tool_path/wrstat-sampling-deamon.py" "$test_dir"&
+  python "$tool_path/wrstat-deamon.py" "$test_dir" &
 fi
-sampling_deamon_pid=$!
+deamon_pid=$!
 
-#waiting for sampling deamon to show up
-while [ ! -f "$test_dir/sampling-deamon.ready" ]
+#waiting for deamon to show up
+while [ ! -f "$test_dir/deamon.ready" ]
 do
 	sleep 0.5
 done
-rm -f "$test_dir/sampling-deamon.ready"
+rm -f "$test_dir/deamon.ready"
 
 #running command
 echo eval $cmd
 eval $cmd &> "$test_dir/output"
 
-#deinit sampling deamon
-echo "killing sampling deamon..."
+#deinit deamon
+echo "killing wrstat deamon deamon..."
 if [ $runasroot == "true" ]; then
-  sudo kill -SIGTERM $sampling_deamon_pid
+  sudo kill -SIGTERM $deamon_pid
 else
-  kill -SIGTERM $sampling_deamon_pid
+  kill -SIGTERM $deamon_pid
 fi
-wait $sampling_deamon_pid
+wait $deamon_pid
 
 #chown everything in test_dir to current user
 if [ $runasroot == "true" ]; then

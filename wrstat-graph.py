@@ -24,4 +24,4 @@ if __name__ == "__main__":
         if modname in samples:
             print "%s: calling module %s" % ( __file__, modname)
             module.plot( sys.argv[1], samples[modname], intervall)
-            
+

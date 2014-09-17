@@ -21,7 +21,7 @@ Running tests:
 
 	wrstat-run path/to/test/directory program arg1 arg2 ...
 
-	While running a test, wrstat-sampling-deamon.py will invoke several
+	While running a test, wrstat-deamon.py will invoke several
 	modules to collect data of different type. The modules to run are
 	specified in wrstat.config.
 

@@ -47,7 +47,7 @@ def timer( intervall):
 def signal_handler(signal, frame):
     global run
 
-    print "stopping all sampling threads..."
+    print "%s: stopping all sampling threads..." % __file__
     run = False
 
     #wake up all waiting sampling threads for a clean exit
@@ -63,7 +63,6 @@ def signal_handler(signal, frame):
         cv.release()
 
     #deinitialize the modules
-    print "running postsampling..."
     for modname, module in modules.iteritems():
         print "%s: deinitialize %s" % ( _file, modname)
         module.postsampling( test_dir)
@@ -85,8 +84,8 @@ if __name__ == "__main__":
     intervall = float( config[ "intervall"])
     modules = load_modules( config[ "modules"])
 
-    print "sampling deamon: Making %f samples per second" % (1.0/intervall)
-    print "starting sampling deamon, use CTRL+C or SIGTERM to end"
+    print "%s: Making %.2f samples per second" % (__file__, 1.0/intervall)
+    print "%s: starting deamon, use CTRL+C or SIGTERM to end" % __file__
 
     #initialize signalhandler
     signal.signal(signal.SIGINT, signal_handler)
@@ -98,7 +97,7 @@ if __name__ == "__main__":
             module.presampling( test_dir)
 
     #signals wrstat to start the test command
-    open( "%s/sampling-deamon.ready" % sys.argv[1], "w").close()
+    open( "%s/deamon.ready" % sys.argv[1], "w").close()
 
     #create sampling thread for each module
     cv = threading.Condition()
