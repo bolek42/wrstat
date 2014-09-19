@@ -93,11 +93,11 @@ def plot( test_dir, data, intervall):
     #per device graph
     for name, device in data[0].iteritems():
         title =  "iostat %s Reading/Writing" % name
-        filename = "%s/iostat-%s-write.svg" % ( test_dir, name)
+        filename = "%s/iostat-%s.svg" % ( test_dir, name)
         g = graphing.init( title, filename)
         g( "set key outside")
         g( "set xlabel 'Runtime ( sec)'")
         g( "set ylabel 'MiB/s'")
         graphing.series( {"read" : read[ name], "write" : write[ name]}, g)
         g.close()
-        
+

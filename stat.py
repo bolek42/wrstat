@@ -8,7 +8,7 @@ import graphing
 from utils import *
 
 def unit( u):
-    return float( u) / os.sysconf_names['SC_CLK_TCK'] 
+    return float( u) / os.sysconf_names['SC_CLK_TCK']
 
 #########################################
 #       Sampling methods                #
@@ -91,6 +91,13 @@ def parse_cpu_row( row):
 #########################################
 
 def plot( test_dir, stat, intervall):
+    if len( stat) == 0:
+        print "stat.py nothing captured"
+        return
+    if len( stat) == 1:
+        print "stat.py: only one sample captured, skipping"
+        return
+
     #aggregate
     title = "/proc/stat Aggreagted"
     filename = "%s/stat-aggreagted.svg" % test_dir
@@ -113,7 +120,7 @@ def plot( test_dir, stat, intervall):
         title = "/proc/stat CPU %d" % cpu
         plot_stat_series( stat, "cpu%d" % cpu, filename, title, intervall)
 
-    #determine width    
+    #determine width
     # 400 pixel offset
     # min 20 pixel per bar
     size = ( 400 + 20 * stat[0]["n_cpu"], 480)
