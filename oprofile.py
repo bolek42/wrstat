@@ -87,8 +87,6 @@ def plot( test_dir, data, intervall):
     if data is None or len( data["rows"]) == 0:
         return
 
-    config = load_config( "%s/wrstat.config" % test_dir)
-
     #plot unfiltred data
     discarded = {}
     for key in data["rows"][0]:
@@ -101,6 +99,7 @@ def plot( test_dir, data, intervall):
     plot_info( file_prefix, filter_title, data, intervall, discarded)
 
     #loading filter
+    config = load_config( "%s/wrstat.config" % test_dir)
     filters = config[ "oprofile_filter"]
     if isinstance( filters, basestring):
         filters = [ filters]

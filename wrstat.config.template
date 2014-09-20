@@ -5,4 +5,4 @@ oprofile_use_operf True
 oprofile_vmlinux /path/to/vmlinux
 oprofile_missing_binaries /lib/modules/<version>/kernel/
 oprofile_filter
-
+lock_stat_filter 

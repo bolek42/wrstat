@@ -3,6 +3,7 @@
 import os
 import csv
 import subprocess
+from sets import Set
 
 import graphing
 from utils import *
@@ -27,6 +28,8 @@ def postsampling( test_dir):
 
 #########################################
 #       Parsing samples                 #
+#       Note: tim units will be         #
+#             converted to ms           #
 #########################################
 
 def parse( test_dir):
@@ -104,7 +107,12 @@ def parse_lock_class( row, keys):
     usage[ "write-locks"] = []
 
     for key, value in zip(keys, data):
-        usage[ key] = float( value)
+        #read keys from file
+        #and convert time to ms
+        if "time" in key:
+            usage[ key] = float( value) / 1000.0
+        else:
+            usage[ key] = float( value)
 
     return usage
 
@@ -125,13 +133,85 @@ def plot( test_dir, samples, intervall):
     if len( samples) < 2:
         return
 
+    #unfiltred plots
+    plot_samples( "%s/lock_stat" % test_dir, "",samples, intervall)
+
+    #loading filter names
+    config = load_config( "%s/wrstat.config" % test_dir)
+    filters = config[ "lock_stat_filter"]
+    if isinstance( filters, basestring):
+        filters = [ filters]
+
+    #filtering data
+    filter_all = Set()
+    for f in filters:
+        if not os.path.isfile( f):
+            print "%s: missing filter %s" % ( __file__, f)
+            continue
+
+        print "%s: processing filter %s" % ( __file__, f)
+
+        #create filter set
+        s = Set()
+        for line in open( f, "r"):
+            s.add( line.strip())
+        filter_all |= s
+
+        file_prefix = "%s/lock_stat-filter-%s" % ( test_dir, f.replace( "/", "_"))
+        filter_title = "Filtred: %s" % f
+        plot_filter( samples, s, intervall, file_prefix, filter_title)
+
+    print "%s: processing all filters" % ( __file__)
+    file_prefix = "%s/lock_stat-filter-all" % ( test_dir)
+    filter_title = "Filtred by all filers"
+    plot_filter( samples, filter_all, intervall, file_prefix, filter_title)
+
+
+#will process the actual filter s and call the plotting method
+def plot_filter( samples, s, intervall, file_prefix, filter_title):
+    #determine lock_classes that passes the filter
+    class_names_filtred = Set() #set of lock names that passed the filter
+    for sample in samples:
+        for (class_name, lock_class) in sample.iteritems():
+            discard = True
+            for function_name in s:
+                # check if lock_class was used by function
+                for read_lock in lock_class["read-locks"]:
+                    if function_name in read_lock["symbol"]:
+                        discard = False
+                for write_lock in lock_class["write-locks"]:
+                    if function_name in write_lock["symbol"]:
+                        discard = False
+            if not discard:
+                class_names_filtred.add( class_name)
+
+    #skip empty results
+    if len( class_names_filtred) == 0:
+        return
+
+    #create filtred samles
+    samples_filtred = []
+    for sample in samples:
+        sample_filtred = {}
+        for (class_name, lock_class) in sample.iteritems():
+            if class_name in class_names_filtred:
+                sample_filtred[class_name] = lock_class
+
+        samples_filtred.append( sample_filtred)
+
+    #actually plotting data
+    plot_samples( file_prefix, filter_title, samples_filtred, intervall)
+
+
+def plot_samples( file_prefix, title_prefix, samples, intervall):
     #preparing data
     data = {}
     for (class_name, lock_class) in samples[-1].iteritems():
         data[ class_name] = [ lock_class[ "waittime-total"]]
+
     #actual plotting
-    title =  "/proc/lock_stat Waittime Total"
-    filename = "%s/lock_stat-waititme.svg" % test_dir
+    title =  "%s /proc/lock_stat Waittime Total" % title_prefix
+    filename = "%s-waititme.svg" % file_prefix
     g = graphing.init( title, filename)
     graphing.histogram_percentage( data, 0, g)
     g.close()
@@ -142,8 +222,8 @@ def plot( test_dir, samples, intervall):
         data[ class_name] = [ lock_class[ "holdtime-total"]]
 
     #actual plotting
-    title =  "/proc/lock_stat Holdtime Total"
-    filename = "%s/lock_stat-holdtime.svg" % test_dir
+    title =  "%s /proc/lock_stat Holdtime Total" % title_prefix
+    filename = "%s-holdtime.svg" % file_prefix
     g = graphing.init( title, filename)
     graphing.histogram_percentage( data, 0, g)
     g.close()
@@ -162,7 +242,7 @@ def plot( test_dir, samples, intervall):
         lock_name = lock_class["name"]
 
         #detailed plot
-        plot_detailed( test_dir, samples, intervall, lock_name, rank)
+        plot_detailed( file_prefix, title_prefix, samples, intervall, lock_name, rank)
         rank += 1
 
         #preparing data
@@ -184,8 +264,8 @@ def plot( test_dir, samples, intervall):
         hold[ lock_class["name"]] = holdtime
 
     #actual plotting waittime
-    title = "/proc/lock_stat Waittime Top"
-    filename = "%s/lockstat_waittime_top.svg" % test_dir
+    title = "%s /proc/lock_stat Waittime Top" % title_prefix
+    filename = "%s-waittime-top.svg" % file_prefix
     g = graphing.init( title, filename)
     g( "set key outside")
     g( "set key bottom right")
@@ -196,10 +276,9 @@ def plot( test_dir, samples, intervall):
     graphing.series( wait, g)
     g.close()
 
-
     #actual plotting holdtime
-    title = "/proc/lock_stat Holdtime Top ( Ordered by Waittime)"
-    filename = "%s/lockstat_holdtime_top.svg" % test_dir
+    title = "%s /proc/lock_stat Holdtime Top ( Ordered by Waittime)" % title_prefix
+    filename = "%s-holdtime-top.svg" % file_prefix
     g = graphing.init( title, filename)
     g( "set key outside")
     g( "set key bottom right")
@@ -210,7 +289,7 @@ def plot( test_dir, samples, intervall):
     graphing.series( hold, g)
     g.close()
 
-def plot_detailed( test_dir, samples, intervall, lock_name, rank):
+def plot_detailed( file_prefix, title_prefix, samples, intervall, lock_name, rank):
     #calculating curves
     waittime = []
     holdtime = []
@@ -254,8 +333,8 @@ def plot_detailed( test_dir, samples, intervall, lock_name, rank):
         locks[ "(w) %s" % symbol_name] = [ con_bounces]
 
     #actual plotting
-    title = "/proc/lock_stat Top %d: %s" % ( rank, lock_name)
-    filename =  "%s/lock_stat-top-%d.svg" % ( test_dir, rank)
+    title = "%s /proc/lock_stat Top %d: %s" % ( title_prefix, rank, lock_name)
+    filename =  "%s-top-%d.svg" % ( file_prefix, rank)
     g = graphing.init( title, filename)
     g( "set multiplot")
 
