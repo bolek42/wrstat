@@ -301,9 +301,9 @@ def plot_detailed( file_prefix, title_prefix, samples, intervall, lock_name, ran
         if lock_name in samples[t] and lock_name in samples[t+1]:
             #wait and holdtime in ms
             wt = ( samples[t+1][ lock_name]["waittime-total"] -
-                samples[t][ lock_name]["waittime-total"]   ) / 1000.0
+                samples[t][ lock_name]["waittime-total"]   )
             ht = ( samples[t+1][ lock_name]["holdtime-total"] -
-                samples[t][ lock_name]["holdtime-total"]   ) / 1000.0
+                samples[t][ lock_name]["holdtime-total"]   )
 
             aq = ( samples[t+1][ lock_name]["acquisitions"] -
                 samples[t][ lock_name]["acquisitions"]   )
