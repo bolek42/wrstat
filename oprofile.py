@@ -18,7 +18,7 @@ from utils import *
 def presampling( test_dir):
     if os.getuid() == 0:
         config = load_config( "%s/wrstat.config" % test_dir)
-        subprocess.call( [ "bash", "%/oprofile-init.sh" % config["tool_path"], test_dir])
+        subprocess.call( [ "bash", "%s/oprofile-init.sh" % config["tool_path"], test_dir])
     else:
         print "ERROR: Oprofile requires root previleges"
 
