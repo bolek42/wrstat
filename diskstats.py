@@ -14,7 +14,8 @@ from utils import *
 #########################################
 
 def presampling( test_dir):
-    subprocess.call( [ "./diskstats-init.sh", test_dir])
+    config = load_config( "%s/wrstat.config" % test_dir)
+    subprocess.call( [ "%s/diskstats-init.sh" % config["tool_path"], test_dir])
 
 def sample( test_dir, t):
     if os.path.isfile( "/proc/diskstats"):
@@ -98,7 +99,7 @@ def plot( test_dir, data, intervall):
         time = { "read" : [], "write" : []}
         sigma = 0.0
         for t in range( len( samples) - 1):
-            read  = ( samples[t + 1][name]["sectors-read"] - 
+            read  = ( samples[t + 1][name]["sectors-read"] -
                 samples[t][name]["sectors-read"])
             write = ( samples[t + 1][name]["sectors-write"] -
                 samples[t][name]["sectors-write"])

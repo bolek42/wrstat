@@ -14,7 +14,8 @@ from utils import *
 
 def presampling( test_dir):
     if os.getuid() == 0:
-        subprocess.call( [ "./lock_stat-reset.sh"])
+        config = load_config( "%s/wrstat.config" % test_dir)
+        subprocess.call( [ "%s/lock_stat-reset.sh" % config["tool_path"]])
     else:
         print "ERROR: lock_stat requires root previleges"
 
