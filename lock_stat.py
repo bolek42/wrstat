@@ -146,7 +146,7 @@ def plot( test_dir, samples, intervall):
     #filtering data
     filter_all = Set()
     for f in filters:
-        if not os.path.isfile( f):
+        if not os.path.isfile( "%s/%s" % (config["tool_path"], f)):
             print "%s: missing filter %s" % ( __file__, f)
             continue
 
@@ -154,7 +154,7 @@ def plot( test_dir, samples, intervall):
 
         #create filter set
         s = Set()
-        for line in open( f, "r"):
+        for line in open( "%s/%s" % (config["tool_path"], f), "r"):
             s.add( line.strip())
         filter_all |= s
 
