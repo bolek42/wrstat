@@ -1,7 +1,7 @@
 import imp
 import csv
 
-def load_config( filename): 
+def load_config( filename):
     #read samplerate from config
     file = open( filename, "r")
     raw = list( csv.reader( file, delimiter=' '))
@@ -16,17 +16,17 @@ def load_config( filename):
 
     return config
 
-def load_modules( modnames):
+def load_modules( modnames, mod_dir):
     if isinstance( modnames, basestring):
         modnames = [ modnames]
 
     modules = {}
     for modname in modnames:
         try:
-            modules[ modname] =  imp.load_source( modname, "%s.py" % modname)
+            modules[ modname] =  imp.load_source( modname, "%s/%s.py" % ( mod_dir, modname))
         except:
             print "error loading %s" % modname
-            raise 
+            raise
 
     return modules
 

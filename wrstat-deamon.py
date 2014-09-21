@@ -77,7 +77,7 @@ if __name__ == "__main__":
     test_dir = sys.argv[1]
     config = load_config( "%s/wrstat.config" % test_dir)
     intervall = float( config[ "intervall"])
-    modules = load_modules( config[ "modules"])
+    modules = load_modules( config[ "modules"], config[ "tool_path"])
 
     print "%s: Making %.2f samples per second" % (__file__, 1.0/intervall)
     print "%s: starting deamon, use CTRL+C or SIGTERM to end" % __file__

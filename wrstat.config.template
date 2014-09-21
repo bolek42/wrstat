@@ -1,3 +1,4 @@
+tool_path /path/to/wrstat
 modules diskstats lock_stat stat oprofile iostat
 runasroot true
 intervall 1

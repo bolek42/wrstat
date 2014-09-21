@@ -19,7 +19,7 @@ if __name__ == "__main__":
     #read config file
     config = load_config( "%s/wrstat.config" % sys.argv[1])
     intervall = float( config[ "intervall"])
-    modules = load_modules( config[ "modules"])
+    modules = load_modules( config[ "modules"], config[ "tool_path"])
 
     #calling modules for parsing
     samples = {}
@@ -27,7 +27,7 @@ if __name__ == "__main__":
         print "%s: calling module %s" % ( __file__, modname)
         data = module.parse( sys.argv[1])
         samples[ modname] = data
-    
+
     f = open( sample_file, "w")
     pickle.dump( samples, f)
     f.close()
