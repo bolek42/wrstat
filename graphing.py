@@ -1,12 +1,12 @@
 import Gnuplot, Gnuplot.funcutils
 
-colors = [     
-        '#FF0000', '#00FF00', '#0000FF', 
-        '#008888', '#880088', '#888800', 
+colors = [
+        '#FF0000', '#00FF00', '#0000FF',
+        '#008888', '#880088', '#888800',
         '#0088FF', '#FF8800', '#88FF00',
         '#004444', '#440044', '#444400',
-        '#880000', '#008800', '#000088', 
-        '#440000', '#004400', '#000044', 
+        '#880000', '#008800', '#000088',
+        '#440000', '#004400', '#000044',
         '#00FF88', '#88FF00', '#FF8800',
         '#000000']
 
@@ -79,7 +79,10 @@ def histogram( data, g, title_len=40):
     g.plot(    *histogram)
 
 
-def histogram_percentage( data, discarded, g, title_len=40):
+def histogram_percentage( data, discarded, g, title_len=40, top_n=16):
+    #check for empty dataset
+    if len(data) == 0:
+        return
     #determine total sum of all bars including discarded samples
     sigma = None
     n_samples = 0
@@ -101,40 +104,49 @@ def histogram_percentage( data, discarded, g, title_len=40):
     percentage = [ 0.0] * n_samples
     normalized = {}
 
-    #in respect to discarded samples
-    yrange  = 0
-    for i in range( n_samples):
-        p = 100.0 - discarded * 100.0 / sigma[i]
-        others[i] = p
-        yrange = max( yrange, p)
+    #normakize data
+    rank = 0
+    y_range = [0.0] * n_samples
+    others = [0.0] * n_samples
+    n_others = 0
+    for key, values in sorted( data.iteritems(), key=lambda (key, value): value, reverse=True):
+        #regular entry
+        if rank < top_n:
+            #over all samples
+            for i in range( n_samples):
+                percentage[i] = values[i] * 100.0 / sigma[i]
+                y_range[i] += percentage[i]
 
-    for key, values in sorted( data.iteritems(), key=lambda (key, value): value, reverse=True)[0:16]:
-        #over all samples
-        for i in range( n_samples):
-            percentage[i] = values[i] * 100.0 / sigma[i]
-            others[i] -= percentage[i]
-
-        #give gnuplot the category key
-        if n_samples == 1:
-            normalized[ "(%.2f%%) %s" % (percentage[0], str( key))] = list( percentage)
+            #give gnuplot the category key
+            if n_samples == 1:
+                normalized[ "(%.2f%%) %s" % (percentage[0], str( key))] = list( percentage)
+            else:
+                normalized[ key] = list( percentage)
+        #others category
         else:
-            normalized[ key] = list( percentage)
+            for i in range( n_samples):
+                p = values[i] * 100.0 / sigma[i]
+                others[i] += p
+                y_range[i] += p
+                n_others += 1
+
+        rank += 1
 
     #others category
     if n_samples == 1:
-        if others[0] > 0.5:
-            normalized[ "(%.2f%%) others" % others[0]] = others
+        if others[0] > 0.0:
+            normalized[ "(%.2f%%) others ( %d)" % ( others[0], n_others)] = others
     else:
         show_others = False
         for o in others:
-            if o > 0.5:
+            if o > 0.0:
                 show_others = True
 
         if show_others:
             normalized[ "others"] = others
 
     #actual gnuplot stuff
-    g( "set yrange [0:%f]" % yrange)
+    g( "set yrange [0:%f]" % max( y_range))
     g( "set ylabel 'Runtime Percentage'")
 
     histogram( normalized, g, title_len)
