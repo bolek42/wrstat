@@ -229,7 +229,6 @@ def plot_histogram( file_prefix, rows, key, title_prefix, discarded):
 
     #actual plotting
     title = "Oprofile %s (App Names)" % title_prefix
-    print title
     filename = "%s-app.svg" % file_prefix
     g = graphing.init( title, filename)
     graphing.histogram_percentage( data, discarded[key], g)
