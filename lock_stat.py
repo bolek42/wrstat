@@ -249,6 +249,8 @@ def plot_samples( file_prefix, title_prefix, samples, intervall):
         #preparing data
         waittime = []
         holdtime = []
+        w_sum = 0.0
+        h_sum = 0.0
         for t in range( len( samples) - 1):
             if lock_name in samples[t] and lock_name in samples[t+1]:
                 wt = ( samples[t+1][ lock_name]["waittime-total"] -
@@ -258,11 +260,16 @@ def plot_samples( file_prefix, title_prefix, samples, intervall):
             else:
                 wt = ht = 0.0
 
+            w_sum += wt / intervall
+            h_sum += ht / intervall
             waittime.append( (t * intervall, wt / intervall))
             holdtime.append( (t * intervall, ht / intervall))
 
-        wait[ lock_class["name"]] = waittime
-        hold[ lock_class["name"]] = holdtime
+        w_mean = w_sum / (len( samples)-1)
+        h_mean = h_sum / (len( samples)-1)
+
+        wait[ "%s (%.2f ms/s)" % ( lock_class["name"], w_mean)] = waittime
+        hold[ "%s (%.2f ms/s)" % ( lock_class["name"], h_mean)] = holdtime
 
     #actual plotting waittime
     title = "%s /proc/lock_stat Waittime Top" % title_prefix
