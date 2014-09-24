@@ -9,6 +9,8 @@ def load_config( filename):
 
     config = {}
     for row in rows:
+        if len( row) == 1:
+            config[ row[0]] = []
         if len( row) == 2:
             config[ row[0]] = row[ 1:][0]
         elif len( row) > 2:

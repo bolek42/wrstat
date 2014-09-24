@@ -5,5 +5,6 @@ intervall 1
 oprofile_use_operf True
 oprofile_vmlinux /path/to/vmlinux
 oprofile_missing_binaries /lib/modules/<version>/kernel/
-oprofile_filter
+oprofile_sym_filter 
+oprofile_app_filter 
 lock_stat_filter 

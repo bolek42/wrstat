@@ -100,20 +100,41 @@ def plot( test_dir, data, intervall):
     filter_title = ""
     plot_info( file_prefix, filter_title, data, intervall, discarded)
 
-    #loading filter
+    #loading config
     config = load_config( "%s/wrstat.config" % test_dir)
-    filters = config[ "oprofile_filter"]
+
+    #filtering data by appname
+    filter_all = Set()
+    filters = config[ "oprofile_app_filter"]
     if isinstance( filters, basestring):
         filters = [ filters]
+    for f in filters:
+        print "%s: processing app filter filter %s" % ( __file__, f)
 
-    #filtering data
+        #create filter set
+        s = Set()
+        s.add( f.strip())
+        filter_all |= s
+
+        file_prefix = "%s/oprofile-app-filter-%s" % ( test_dir, f.replace( "/", "_"))
+        filter_title = "Filtred (App): %s" % f
+        plot_filter( data, s, intervall, file_prefix, filter_title, filter_key="app_name")
+
+    file_prefix = "%s/oprofile-app-filter-all" % ( test_dir)
+    filter_title = "Filtred by all filers (App)"
+    plot_filter( data, filter_all, intervall, file_prefix, filter_title, filter_key="app_name")
+
+    #filtering data by symbolname
     filter_all = Set()
+    filters = config[ "oprofile_sym_filter"]
+    if isinstance( filters, basestring):
+        filters = [ filters]
     for f in filters:
         if not os.path.isfile( "%s/%s" % (config["tool_path"], f)):
-            print "%s: missing filter %s" % ( __file__, f)
+            print "%s: missing sym filter %s" % ( __file__, f)
             continue
 
-        print "%s: processing filter %s" % ( __file__, f)
+        print "%s: processing sym filter %s" % ( __file__, f)
 
         #create filter set
         s = Set()
@@ -121,16 +142,16 @@ def plot( test_dir, data, intervall):
             s.add( line.strip())
         filter_all |= s
 
-        file_prefix = "%s/oprofile-filter-%s" % ( test_dir, f.replace( "/", "_"))
-        filter_title = "Filtred: %s" % f
+        file_prefix = "%s/oprofile-sym-filter-%s" % ( test_dir, f.replace( "/", "_"))
+        filter_title = "Filtred (Sym): %s" % f
         plot_filter( data, s, intervall, file_prefix, filter_title)
 
-    file_prefix = "%s/oprofile-filter-all" % ( test_dir)
-    filter_title = "Filtred by all filers"
+    file_prefix = "%s/oprofile-sym-filter-all" % ( test_dir)
+    filter_title = "Filtred by all filers (Sym)"
     plot_filter( data, filter_all, intervall, file_prefix, filter_title)
 
 
-def plot_filter( data, s, intervall, file_prefix, filter_title):
+def plot_filter( data, s, intervall, file_prefix, filter_title, filter_key="symbol_name"):
     #determine discarded samples
     discarded = {}
     for key in data["rows"][0]:
@@ -141,7 +162,7 @@ def plot_filter( data, s, intervall, file_prefix, filter_title):
     rows = []
     has_data = False
     for row in data["rows"]:
-        if row[ "symbol_name"] in s:
+        if row[ filter_key] in s:
             rows.append( row)
             has_data = True
         else:
