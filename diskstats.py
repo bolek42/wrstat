@@ -150,7 +150,7 @@ def plot( test_dir, data, intervall):
         g.close()
 
         #plotting time spent on io
-        title =  "/proc/diskstats Time spent on IO %s" % name
+        title =  "/proc/diskstats Time Spent on IO %s" % name
         filename = "%s/diskstats-%s-time.svg" % ( test_dir, name)
         g = graphing.init( title, filename)
         g( "set key outside")
@@ -182,21 +182,21 @@ def plot( test_dir, data, intervall):
     g.close()
 
     #plotting time read for all devices
-    title =  "/proc/diskstats Time Reading"
+    title =  "/proc/diskstats Time Spent Reading"
     filename = "%s/diskstats-time-read.svg" % ( test_dir)
     g = graphing.init( title, filename)
     g( "set key outside")
     g( "set xlabel 'Runtime ( sec)'")
-    g( "set ylabel 'MiB/s'")
+    g( "set ylabel 'ms/s'")
     graphing.series( time_read, g)
     g.close()
 
     #plotting time write for all devices
-    title =  "/proc/diskstats Time Writing"
+    title =  "/proc/diskstats Time Spent Writing"
     filename = "%s/diskstats-time-write.svg" % ( test_dir)
     g = graphing.init( title, filename)
     g( "set key outside")
     g( "set xlabel 'Runtime ( sec)'")
-    g( "set ylabel 'MiB/s'")
+    g( "set ylabel 'ms/s'")
     graphing.series( time_write, g)
     g.close()
