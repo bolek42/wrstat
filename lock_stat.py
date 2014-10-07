@@ -67,9 +67,9 @@ def parse_sample( filename):
             pass
         elif len(row) == 1 and row[0][0] == '-':
             if state == "lock_class":
-                state = "read_lock" #FIXME inverse?
-            elif state == "read_lock":
-                state = "write_lock"
+                state = "contention_point"
+            elif state == "contention_point":
+                state = "contention_with_point"
 
         elif len(row) == 1 and row[0][0] == '.':
             state = "lock_class"
@@ -77,23 +77,23 @@ def parse_sample( filename):
             lock_class = parse_lock_class( row, keys)
             if not( lock_class is None):
                 lock_classes.update( { lock_class["name"] : lock_class})
-        elif state == "read_lock":
+        elif state == "contention_point":
             name_offset = lock_class["name"].count( ' ')  + 1
-            lock = parse_lock( row, name_offset)
-            if not( lock is None):
-                lock_class["read-locks"].append( lock)
-        elif state == "write_lock":
+            cp = parse_contention_point( row, name_offset)
+            if not( cp is None):
+                lock_class["contention-points"].append( cp)
+        elif state == "contention_with_point":
             name_offset = lock_class["name"].count( ' ')  + 1
-            lock = parse_lock( row, name_offset)
-            if not( lock is None):
-                lock_class["write-locks"].append( lock)
+            cp = parse_contention_point( row, name_offset)
+            if not( cp is None):
+                lock_class["contention-with-points"].append( cp)
 
     file.close()
     return lock_classes
 
 def parse_lock_class( row, keys):
     if len( row) <= len( keys):
-        print "invalid usage row"
+        print "invalid lock class row"
         return None
 
     lockname = row[ 0 : len( row) - len( keys)]
@@ -102,28 +102,32 @@ def parse_lock_class( row, keys):
 
     data = row[ len( row) - len( keys) ::]
 
-    usage = {}
-    usage[ "name"] = lockname
-    usage[ "read-locks"] = []
-    usage[ "write-locks"] = []
+    lock_class = {}
+    lock_class[ "name"] = lockname
+    lock_class[ "contention-points"] = []
+    lock_class[ "contention-with-points"] = []
 
     for key, value in zip(keys, data):
         #read keys from file
         #and convert time to ms
         if "time" in key:
-            usage[ key] = float( value) / 1000.0
+            lock_class[ key] = float( value) / 1000.0
         else:
-            usage[ key] = float( value)
+            lock_class[ key] = float( value)
 
-    return usage
+    return lock_class
 
-def parse_lock( row, offset):
-    lock = {}
-    lock[ "con-bounces"] = int( row[offset])
-    lock[ "addr"] = row[offset + 1]
-    lock[ "symbol"] = row[offset + 2]
+def parse_contention_point( row, name_offset):
+    cp = {}
+    cp[ "con-bounces"] = int( row[name_offset])
+    cp[ "addr"] = row[name_offset + 1]
+    symbol = row[name_offset + 2]
+    offset = symbol[ symbol.index( '+') + 1:]
+    symbol = symbol[ :symbol.index( '+')]
+    cp[ "symbol"] = symbol
+    cp[ "offset"] = offset
 
-    return lock
+    return cp
 
 
 #########################################
@@ -175,14 +179,14 @@ def plot_filter( samples, s, intervall, file_prefix, filter_title):
     for sample in samples:
         for (class_name, lock_class) in sample.iteritems():
             discard = True
-            for function_name in s:
-                # check if lock_class was used by function
-                for read_lock in lock_class["read-locks"]:
-                    if function_name in read_lock["symbol"]:
-                        discard = False
-                for write_lock in lock_class["write-locks"]:
-                    if function_name in write_lock["symbol"]:
-                        discard = False
+            # check if lock_class was used by function
+            for lc in lock_class["contention-points"]:
+                if lc["symbol"] in s:
+                    discard = False
+            for lc in lock_class["contention-with-points"]:
+                if lc["symbol"] in s:
+                    discard = False
+
             if not discard:
                 class_names_filtred.add( class_name)
 
@@ -329,16 +333,17 @@ def plot_detailed( file_prefix, title_prefix, samples, intervall, lock_name, ran
         con_bounce.append( (t * intervall, cb / intervall))
 
     #build histogram data structure
-    locks = {}
-    for lock in samples[-1][ lock_name]["read-locks"]:
-        symbol_name = lock["symbol"]
-        con_bounces = lock["con-bounces"]
-        locks[ "(r) %s" % symbol_name] = [ con_bounces]
+    contention_points = {}
+    for contention_point in samples[-1][ lock_name]["contention-points"]:
+        symbol_name = contention_point["symbol"]
+        con_bounces = contention_point["con-bounces"]
+        contention_points[ symbol_name] = [ con_bounces]
 
-    for lock in samples[-1][ lock_name]["write-locks"]:
-        symbol_name = lock["symbol"]
-        con_bounces = lock["con-bounces"]
-        locks[ "(w) %s" % symbol_name] = [ con_bounces]
+    contention_with_points = {}
+    for contention_with_point in samples[-1][ lock_name]["contention-with-points"]:
+        symbol_name = contention_with_point["symbol"]
+        con_bounces = contention_with_point["con-bounces"]
+        contention_with_points[ symbol_name] = [ con_bounces]
 
     #actual plotting
     title = "%s /proc/lock_stat Top %d: %s" % ( title_prefix, rank, lock_name)
@@ -347,34 +352,40 @@ def plot_detailed( file_prefix, title_prefix, samples, intervall, lock_name, ran
     g( "set multiplot")
 
     #Waittime subplot
-    g( "set origin 0,0.45")
-    g( "set size 0.5,0.5")
+    g( "set origin 0,0.55")
+    g( "set size 0.5,0.4")
     g( "set title 'Wait-/Holdtime'")
     g( "set ylabel 'ms/s'")
+    g( "set key bottom right")
+    g( "set key outside")
+    g( "set key bmargin")
+    g( "set key horizontal")
     graphing.series( {"Waittime" : waittime, "Holdtime" : holdtime}, g)
 
     g("unset object 1")
 
     #Acquisitions - Contentions subplot
-    g( "set origin 0.5,0.45")
-    g( "set size 0.5,0.5")
+    g( "set origin 0.5,0.55")
+    g( "set size 0.5,0.4")
     g( "set title 'Acquisitions - Contentions'")
     g( "set ylabel '#/s'")
     g( "set logscale y")
-    g( "set key bottom right")
-    g( "set key outside")
-    g( "set key bmargin")
-    g( "set key horizontal")
     graphing.series( {"acqu." : acquisitions, "cont." :  contentions}, g)
     g( "unset logscale y")
     g( "set key default")
 
-    #Bounces - Functions subplot
+    #Contentions subplot
+    g( "unset title")
+    g( "set ylabel 'Contentions'")
+    g( "set origin 0,0.27")
+    g( "set size 1,0.30")
+    graphing.histogram_percentage( contention_points, 0, g)
+
+    #Contentions subplot
+    g( "set ylabel 'Contentions With'")
     g( "set origin 0,0")
-    g( "set size 1,0.5")
-    g( "set title 'Read/Write'")
-    g( "set ylabel 'Bounces Total'")
-    graphing.histogram_percentage( locks, 0, g)
+    g( "set size 1,0.30")
+    graphing.histogram_percentage( contention_with_points, 0, g)
 
     g.close()
 

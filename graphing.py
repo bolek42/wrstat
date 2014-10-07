@@ -76,7 +76,7 @@ def histogram( data, g, title_len=40):
         g( "set xtics 1")
         g( "set xrange [-0.5:%.1f]" % (n_samples - 0.5))
 
-    g.plot(    *histogram)
+    g.plot( *histogram)
 
 
 def histogram_percentage( data, discarded, g, title_len=40, top_n=16):
@@ -147,8 +147,6 @@ def histogram_percentage( data, discarded, g, title_len=40, top_n=16):
 
     #actual gnuplot stuff
     g( "set yrange [0:%f]" % max( y_range))
-    g( "set ylabel 'Runtime Percentage'")
-
     histogram( normalized, g, title_len)
 
 #we need this to avoid "gnuplot injection" ...
