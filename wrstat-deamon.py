@@ -18,10 +18,16 @@ _file = __file__
 
 
 #The actual thread taking samples for a single module
-def sample( module):
+def sample( module, modname):
     global cv
+    t_last = -1
     while run:
         module.sample( test_dir, t)
+
+        #check for lost samples
+        if t_last - t > 0:
+            print "%s module %s lost %d samples" % ( _file,  modname, t - t_last - 1)
+        t_last = t
 
         cv.acquire()
         cv.wait()
@@ -67,6 +73,9 @@ def signal_handler(signal, frame):
         print "%s: deinitialize %s" % ( _file, modname)
         module.postsampling( test_dir)
 
+    #flush files in copy queue
+    copy_queued_finish()
+
 
 if __name__ == "__main__":
     if len( sys.argv) != 2:
@@ -87,6 +96,9 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
+    #launch copy queued thread
+    copy_queued_init()
+
     #initialize modules by presampling method
     for modname, module in modules.iteritems():
             print "%s: initialize %s" % ( __file__, modname)
@@ -98,7 +110,7 @@ if __name__ == "__main__":
     #create sampling thread for each module
     cv = threading.Condition()
     for modname, module in modules.iteritems():
-        thread = threading.Thread( target=sample, args=( module,))
+        thread = threading.Thread( target=sample, args=( module, modname))
         thread.start()
         sampling_threads.append( thread)
 

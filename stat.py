@@ -19,7 +19,7 @@ def presampling( test_dir):
 
 def sample( test_dir, t):
     if os.path.isfile( "/proc/stat"):
-        copy_buffered( "/proc/stat", "%s/samples/stat_%d" % ( test_dir, t))
+        copy_queued( "/proc/stat", "%s/samples/stat_%d" % ( test_dir, t))
 
 def postsampling( test_dir):
     pass

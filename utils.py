@@ -1,6 +1,8 @@
 import os
 import imp
 import csv
+import Queue
+import threading
 
 def load_config( filename):
     #read samplerate from config
@@ -33,16 +35,87 @@ def load_modules( modnames, mod_dir):
 
     return modules
 
-#this method firt reads src and writes then the data to dest,
-#so any lags on writing will not affect the sample rate
-def copy_buffered( src, dest):
+def get_tool_path():
+    return os.path.dirname( os.path.realpath( __file__))
+
+#this methods implement a queued copy in an extra thread
+#the queue used is thread safe
+#this is the actual method that can be used for copy
+#files will be read immediately queued for writing
+def copy_queued( src, dest):
+    global copy_queue
+    global copy_cv
+
+
     f = open( src, "r")
     data = f.read()
     f.close()
 
-    f = open( dest, "w")
-    f.write( data)
-    f.close()
+    if not copy_run:
+        print "error: copy thread not running, writing directly!"
+        f = open( dest, "w")
+        f.write( data)
+        f.close()
+        return
 
-def get_tool_path():
-    return os.path.dirname( os.path.realpath( __file__))
+    #put data
+    copy_queue.put( (dest, data))
+
+    #notify copy thread
+    copy_cv.acquire()
+    copy_cv.notify_all()
+    copy_cv.release()
+
+############################################
+#this methods will be called by wrstat only#
+############################################
+copy_queue = None
+copy_run = False
+copy_cv = None
+copy_thread = None
+
+#the actual thread, that will write the data to disk
+def copy_queued_worker():
+    global copy_queue
+    global copy_cv
+
+    while copy_run or not copy_queue.empty():
+        #unqueue and write files
+        while not copy_queue.empty():
+            dest, data = copy_queue.get()
+
+            f = open( dest, "w")
+            f.write( data)
+            f.close()
+
+        #wait for data
+        if copy_run:
+            copy_cv.acquire()
+            copy_cv.wait()
+            copy_cv.release()
+
+
+def copy_queued_init():
+    global copy_queue
+    global copy_run
+    global copy_cv
+    global copy_thread
+
+    copy_queue = Queue.Queue()
+    copy_run = True
+    copy_cv = threading.Condition()
+    copy_thread = threading.Thread( target=copy_queued_worker)
+    copy_thread.start()
+
+
+def copy_queued_finish():
+    global copy_run
+    global copy_cv
+
+    #end thread
+    copy_run = False
+    copy_cv.acquire()
+    copy_cv.notify_all()
+    copy_cv.release()
+    copy_thread.join()
+

@@ -19,7 +19,7 @@ def presampling( test_dir):
 
 def sample( test_dir, t):
     if os.path.isfile( "/proc/diskstats"):
-        copy_buffered( "/proc/diskstats", "%s/samples/diskstats_%d" % ( test_dir, t))
+        copy_queued( "/proc/diskstats", "%s/samples/diskstats_%d" % ( test_dir, t))
 
 def postsampling( test_dir):
     pass
@@ -86,8 +86,11 @@ def parse_sample( filename):
 #########################################
 
 def plot( test_dir, data, intervall):
-
     samples = data[ "samples"]
+    if len( samples) < 2:
+        print "%s nothing captured" % __file__
+        return
+
     for name, device in samples[0].iteritems():
         phy_name = name
         while phy_name not in data[ "blocksize"]:
