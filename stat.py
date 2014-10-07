@@ -7,9 +7,6 @@ import shutil
 import graphing
 from utils import *
 
-def unit( u):
-    return float( u) / os.sysconf_names['SC_CLK_TCK']
-
 #########################################
 #       Sampling methods                #
 #########################################
@@ -56,7 +53,7 @@ def parse_sample( filename):
             stat[ name] = cpu
             n_cpu += 1
         elif len( row) == 2:
-            stat[ row[ 0]] = unit( row[1])
+            stat[ row[ 0]] = int( row[1])
         #TODO add missing
 
     stat["n_cpu"] = n_cpu
@@ -66,22 +63,22 @@ def parse_sample( filename):
 def parse_cpu_row( row):
     cpu = {}
     name = row[0]
-    cpu[ "user"] = unit( row[1])
-    cpu[ "nice"] = unit( row[2])
-    cpu[ "system"] = unit( row[3])
-    cpu[ "idle"] = unit( row[4])
+    cpu[ "user"] = int( row[1])
+    cpu[ "nice"] = int( row[2])
+    cpu[ "system"] = int( row[3])
+    cpu[ "idle"] = int( row[4])
     if len( row) > 5:
-        cpu[ "iowait"] = unit( row[5])
+        cpu[ "iowait"] = int( row[5])
     if len( row) > 6:
-        cpu[ "irq"] = unit( row[6])
+        cpu[ "irq"] = int( row[6])
     if len( row) > 7:
-        cpu[ "softirq"] = unit( row[7])
+        cpu[ "softirq"] = int( row[7])
     if len( row) > 8:
-        cpu[ "steal"] = unit( row[8])
+        cpu[ "steal"] = int( row[8])
     if len( row) > 9:
-        cpu[ "guest"] = unit( row[9])
+        cpu[ "guest"] = int( row[9])
     if len( row) > 10:
-        cpu[ "guest_nice"] = unit( row[10])
+        cpu[ "guest_nice"] = int( row[10])
 
     return name, cpu
 
