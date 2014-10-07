@@ -1,7 +1,8 @@
 modules diskstats lock_stat stat oprofile iostat
 runasroot true
 intervall 1
-oprofile_use_operf True
+oprofile_use_operf False
+oprofile_event CPU_CLK_UNHALTED:100000:0:1:1
 oprofile_vmlinux /path/to/vmlinux
 oprofile_missing_binaries /lib/modules/<version>/kernel/
 oprofile_sym_filter 

@@ -14,6 +14,7 @@ test_dir="$1"
 use_operf="$( cat "$test_dir/wrstat.config" | grep "oprofile_use_operf" | cut -d " "  -f 2-)"
 use_operf=${use_operf,,}
 vmlinux="$( cat "$test_dir/wrstat.config" | grep "oprofile_vmlinux" | cut -d " "  -f 2-)"
+event="$( cat "$test_dir/wrstat.config" | grep "oprofile_event" | cut -d " "  -f 2-)"
 
 rm -rf "$test_dir/oprofile_data/" &>/dev/null
 mkdir "$test_dir/oprofile_data/"
@@ -23,10 +24,10 @@ if [ $use_operf == "true" ]; then
     if [ "$(which operf 2>/dev/null)" != "" ]; then
         #starting operf
         if [ "$vmlinux" == "" ];then
-            operf --system-wide --separate-cpu --session-dir="$test_dir/oprofile_data/"&
+            operf --system-wide --separate-cpu --session-dir="$test_dir/oprofile_data/" --events="$event"&
         else
             ln -sf "$vmlinux" "$test_dir/vmlinux"
-            operf --system-wide --separate-cpu --vmlinux="$test_dir/vmlinux" --session-dir="$test_dir/oprofile_data/"&
+            operf --system-wide --separate-cpu --vmlinux="$test_dir/vmlinux" --session-dir="$test_dir/oprofile_data/" --events="$event"&
         fi
         echo $! > "$test_dir/operf.pid"
     fi
@@ -37,9 +38,10 @@ else
 
         opcontrol --reset
         opcontrol --deinit
-        modprobe oprofile timer=1
-        echo 0 > /proc/sys/kernel/nmi_watchdog
-        opcontrol --separate=cpu #--separate=none
+#        modprobe oprofile timer=1
+#        echo 0 > /proc/sys/kernel/nmi_watchdog
+        opcontrol --separate=cpu
+        opcontrol --event="$event"
 
         if [ "$vmlinux" == "" ];then
             opcontrol --start --no-vmlinux --session-dir="$test_dir/oprofile_data/"
