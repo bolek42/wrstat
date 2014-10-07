@@ -39,17 +39,17 @@ def parse( test_dir):
 
         t+= 1
 
-    blocksize = parse_blocksize( test_dir)
+    sectorsize = parse_sectorsize( test_dir)
 
-    return {"samples" : samples, "blocksize" : blocksize}
+    return {"samples" : samples, "sectorsize" : sectorsize}
 
-def parse_blocksize( test_dir):
-    blocksize = load_config( "%s/blocksizes" % test_dir)
+def parse_sectorsize( test_dir):
+    sectorsize = load_config( "%s/sectorsizes" % test_dir)
 
-    for name, bs in blocksize.iteritems():
-        blocksize[ name] = int( bs)
+    for name, bs in sectorsize.iteritems():
+        sectorsize[ name] = int( bs)
 
-    return blocksize
+    return sectorsize
 
 def parse_sample( filename):
     file = open( filename, "r")
@@ -91,11 +91,15 @@ def plot( test_dir, data, intervall):
         print "%s nothing captured" % __file__
         return
 
+    io_read = {}
+    io_write = {}
+    time_read = {}
+    time_write = {}
     for name, device in samples[0].iteritems():
         phy_name = name
-        while phy_name not in data[ "blocksize"]:
+        while phy_name not in data[ "sectorsize"]:
             phy_name = phy_name[:-1]
-        blocksize = data[ "blocksize"][phy_name]
+        sectorsize = data[ "sectorsize"][phy_name]
 
         #preparing data
         io = { "read" : [], "write" : []}
@@ -107,8 +111,8 @@ def plot( test_dir, data, intervall):
             write = ( samples[t + 1][name]["sectors-write"] -
                 samples[t][name]["sectors-write"])
             #convert to MiB/s
-            read *= blocksize / 1048576.0
-            write *= blocksize / 1048576.0
+            read *= sectorsize / 1048576.0
+            write *= sectorsize / 1048576.0
 
             sigma += read + write
 
@@ -116,22 +120,28 @@ def plot( test_dir, data, intervall):
             io[ "read"].append( ((t * intervall), read * intervall))
             io[ "write"].append( ((t * intervall), write * intervall))
 
-            time_read = ( samples[t + 1][name]["time-read"] -
+            tr = ( samples[t + 1][name]["time-read"] -
                 samples[t][name]["time-read"])
-            time_write = ( samples[t + 1][name]["time-write"] -
+            tw = ( samples[t + 1][name]["time-write"] -
                 samples[t][name]["time-write"])
 
             #normalize
-            time[ "read"].append( ((t * intervall), time_read * intervall))
-            time[ "write"].append( ((t * intervall), time_write * intervall))
+            time[ "read"].append( ((t * intervall), tr * intervall))
+            time[ "write"].append( ((t * intervall), tw * intervall))
 
         #determine if device has io throughput
         if sigma == 0:
             continue
 
+        #collect data for all devices
+        io_read[ name] = io["read"]
+        io_write[ name] = io["write"]
+        time_read[ name] = time["read"]
+        time_write[ name] = time["write"]
+
         #plotting MiB/s
         title =  "/proc/diskstats Reading/Writing %s" % name
-        filename = "%s/diskstats-%s-sectors.svg" % ( test_dir, name)
+        filename = "%s/diskstats-%s.svg" % ( test_dir, name)
         g = graphing.init( title, filename)
         g( "set key outside")
         g( "set xlabel 'Runtime ( sec)'")
@@ -141,10 +151,52 @@ def plot( test_dir, data, intervall):
 
         #plotting time spent on io
         title =  "/proc/diskstats Time spent on IO %s" % name
-        filename = "%s/diskstats-%s-time-io.svg" % ( test_dir, name)
+        filename = "%s/diskstats-%s-time.svg" % ( test_dir, name)
         g = graphing.init( title, filename)
         g( "set key outside")
         g( "set xlabel 'Runtime ( sec)'")
         g( "set ylabel 'ms/s'")
         graphing.series( time, g)
         g.close()
+
+    #graphs for all devices
+
+    #plotting io read for all devices
+    title =  "/proc/diskstats IO Reading"
+    filename = "%s/diskstats-read.svg" % ( test_dir)
+    g = graphing.init( title, filename)
+    g( "set key outside")
+    g( "set xlabel 'Runtime ( sec)'")
+    g( "set ylabel 'MiB/s'")
+    graphing.series( io_read, g)
+    g.close()
+
+    #plotting io write for all devices
+    title =  "/proc/diskstats IO Writing"
+    filename = "%s/diskstats-write.svg" % ( test_dir)
+    g = graphing.init( title, filename)
+    g( "set key outside")
+    g( "set xlabel 'Runtime ( sec)'")
+    g( "set ylabel 'MiB/s'")
+    graphing.series( io_write, g)
+    g.close()
+
+    #plotting time read for all devices
+    title =  "/proc/diskstats Time Reading"
+    filename = "%s/diskstats-time-read.svg" % ( test_dir)
+    g = graphing.init( title, filename)
+    g( "set key outside")
+    g( "set xlabel 'Runtime ( sec)'")
+    g( "set ylabel 'MiB/s'")
+    graphing.series( time_read, g)
+    g.close()
+
+    #plotting time write for all devices
+    title =  "/proc/diskstats Time Writing"
+    filename = "%s/diskstats-time-write.svg" % ( test_dir)
+    g = graphing.init( title, filename)
+    g( "set key outside")
+    g( "set xlabel 'Runtime ( sec)'")
+    g( "set ylabel 'MiB/s'")
+    graphing.series( time_write, g)
+    g.close()

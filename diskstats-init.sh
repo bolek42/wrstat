@@ -8,10 +8,10 @@ if [ $# -ne 1 ]; then
 fi
 test_dir="$1"
 
-#saving blocksizes
-rm "$test_dir/blocksizes" &>/dev/null
+#saving sectorsizes
+rm "$test_dir/sectorsizes" &>/dev/null
 for DEVICE in $(ls /sys/block/)
 do
-    BLCKSIZE=$( cat "/sys/block/$DEVICE/queue/physical_block_size")
-    echo $DEVICE $BLCKSIZE >> "$test_dir/blocksizes"
+    SECSIZE=$( cat "/sys/block/$DEVICE/queue/hw_sector_size")
+    echo $DEVICE $SECSIZE >> "$test_dir/sectorsizes"
 done
