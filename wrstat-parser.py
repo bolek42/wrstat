@@ -17,9 +17,10 @@ if __name__ == "__main__":
     sample_file = "%s/samples.pickle" % sys.argv[1]
 
     #read config file
+    tool_path = get_tool_path()
     config = load_config( "%s/wrstat.config" % sys.argv[1])
     intervall = float( config[ "intervall"])
-    modules = load_modules( config[ "modules"], config[ "tool_path"])
+    modules = load_modules( config[ "modules"], tool_path)
 
     #calling modules for parsing
     samples = {}

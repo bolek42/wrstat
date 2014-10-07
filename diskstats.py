@@ -14,8 +14,8 @@ from utils import *
 #########################################
 
 def presampling( test_dir):
-    config = load_config( "%s/wrstat.config" % test_dir)
-    subprocess.call( [ "%s/diskstats-init.sh" % config["tool_path"], test_dir])
+    tool_path = get_tool_path()
+    subprocess.call( [ "%s/diskstats-init.sh" % tool_path, test_dir])
 
 def sample( test_dir, t):
     if os.path.isfile( "/proc/diskstats"):

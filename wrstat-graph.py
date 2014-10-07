@@ -11,9 +11,10 @@ if __name__ == "__main__":
         exit(1)
 
     #read config file
+    tool_path = get_tool_path()
     config = load_config( "%s/wrstat.config" % sys.argv[1])
     intervall = float( config[ "intervall"])
-    modules = load_modules( config[ "modules"], config[ "tool_path"])
+    modules = load_modules( config[ "modules"], tool_path)
 
     # load samples
     print "%s: loading samples..." % ( __file__)

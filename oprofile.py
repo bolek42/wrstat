@@ -17,8 +17,8 @@ from utils import *
 
 def presampling( test_dir):
     if os.getuid() == 0:
-        config = load_config( "%s/wrstat.config" % test_dir)
-        subprocess.call( [ "bash", "%s/oprofile-init.sh" % config["tool_path"], test_dir])
+        tool_path = get_tool_path()
+        subprocess.call( [ "bash", "%s/oprofile-init.sh" % tool_path, test_dir])
     else:
         print "ERROR: Oprofile requires root previleges"
 
@@ -27,8 +27,8 @@ def sample( test_dir, t):
 
 def postsampling( test_dir):
     if os.getuid() == 0:
-        config = load_config( "%s/wrstat.config" % test_dir)
-        subprocess.call( [ "bash", "%s/oprofile-deinit.sh" % config["tool_path"], test_dir])
+        tool_path = get_tool_path()
+        subprocess.call( [ "bash", "%s/oprofile-deinit.sh" % tool_path, test_dir])
 
 
 #########################################

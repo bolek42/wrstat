@@ -1,3 +1,4 @@
+import os
 import imp
 import csv
 
@@ -42,3 +43,6 @@ def copy_buffered( src, dest):
     f = open( dest, "w")
     f.write( data)
     f.close()
+
+def get_tool_path():
+    return os.path.dirname( os.path.realpath( __file__))

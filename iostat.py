@@ -9,15 +9,15 @@ from utils import *
 #########################################
 
 def presampling( test_dir):
-    config = load_config( "%s/wrstat.config" % test_dir)
-    subprocess.call( [ "%s/iostat-init.sh" % config["tool_path"], test_dir])
+    tool_path = get_tool_path()
+    subprocess.call( [ "%s/iostat-init.sh" % tool_path, test_dir])
 
 def sample( test_dir, t):
     pass
 
 def postsampling( test_dir):
-    config = load_config( "%s/wrstat.config" % test_dir)
-    subprocess.call( [ "%s/iostat-deinit.sh" % config[ "tool_path"], test_dir])
+    tool_path = get_tool_path()
+    subprocess.call( [ "%s/iostat-deinit.sh" % tool_path, test_dir])
 
 
 #########################################
