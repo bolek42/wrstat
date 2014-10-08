@@ -65,7 +65,7 @@ rm -f "$test_dir/deamon.ready"
 
 #running command
 echo eval $cmd
-eval $cmd &> "$test_dir/output"
+time (eval $cmd &> "$test_dir/output") > "$test_dir/time"
 
 #deinit deamon
 echo "killing wrstat deamon deamon..."
