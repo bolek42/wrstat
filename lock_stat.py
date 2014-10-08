@@ -21,6 +21,7 @@ def presampling( test_dir):
 
 def sample( test_dir, t):
     if os.path.isfile( "/proc/lock_stat") and os.getuid() == 0:
+        tool_path = get_tool_path()
         copy_queued( "/proc/lock_stat", "%s/samples/lock_stat_%d" % ( test_dir, t))
 
 def postsampling( test_dir):
@@ -150,7 +151,7 @@ def plot( test_dir, samples, intervall):
     #filtering data
     filter_all = Set()
     for f in filters:
-        if not os.path.isfile( "%s/%s" % (config["tool_path"], f)):
+        if not os.path.isfile( "%s/%s" % (tool_path, f)):
             print "%s: missing filter %s" % ( __file__, f)
             continue
 
@@ -158,7 +159,7 @@ def plot( test_dir, samples, intervall):
 
         #create filter set
         s = Set()
-        for line in open( "%s/%s" % (config["tool_path"], f), "r"):
+        for line in open( "%s/%s" % (tool_path, f), "r"):
             s.add( line.strip())
         filter_all |= s
 

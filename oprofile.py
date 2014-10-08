@@ -125,12 +125,13 @@ def plot( test_dir, data, intervall):
     plot_filter( data, filter_all, intervall, file_prefix, filter_title, filter_key="app_name")
 
     #filtering data by symbolname
+    tool_path = get_tool_path()
     filter_all = Set()
     filters = config[ "oprofile_sym_filter"]
     if isinstance( filters, basestring):
         filters = [ filters]
     for f in filters:
-        if not os.path.isfile( "%s/%s" % (config["tool_path"], f)):
+        if not os.path.isfile( "%s/%s" % (tool_path, f)):
             print "%s: missing sym filter %s" % ( __file__, f)
             continue
 
@@ -138,7 +139,7 @@ def plot( test_dir, data, intervall):
 
         #create filter set
         s = Set()
-        for line in open( "%s/%s" % (config["tool_path"], f), "r"):
+        for line in open( "%s/%s" % (tool_path, f), "r"):
             s.add( line.strip())
         filter_all |= s
 
