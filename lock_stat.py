@@ -143,6 +143,7 @@ def plot( test_dir, samples, intervall):
     plot_samples( "%s/lock_stat" % test_dir, "",samples, intervall)
 
     #loading filter names
+    tool_path = get_tool_path()
     config = load_config( "%s/wrstat.config" % test_dir)
     filters = config[ "lock_stat_filter"]
     if isinstance( filters, basestring):
