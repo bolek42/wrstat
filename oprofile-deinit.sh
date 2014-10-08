@@ -41,8 +41,10 @@ else
         #dumping results
         if [ "$missing_binaries" == "" ]; then
             opreport --session-dir="$test_dir/oprofile_data/" -l > "$test_dir/samples/oprofile"
+            opreport --session-dir="$test_dir/oprofile_data/" -c > "$test_dir/samples/oprofile-callgraph"
         else
             opreport --session-dir="$test_dir/oprofile_data/" -p "$missing_binaries" -l > "$test_dir/samples/oprofile"
+            opreport --session-dir="$test_dir/oprofile_data/" -p "$missing_binaries" -c > "$test_dir/samples/oprofile-callgraph"
         fi
     fi
 fi
