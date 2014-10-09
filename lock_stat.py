@@ -394,13 +394,13 @@ def plot_detailed( file_prefix, title_prefix, samples, intervall, lock_name, ran
     g( "set ylabel 'Contentions'")
     g( "set origin 0,0.27")
     g( "set size 1,0.30")
-    graphing.histogram_percentage( contention_points, 0, g)
+    graphing.histogram_percentage( contention_points, 0, g, 50)
 
     #Contentions subplot
     g( "set ylabel 'Contentions With'")
     g( "set origin 0,0")
     g( "set size 1,0.30")
-    graphing.histogram_percentage( contention_with_points, 0, g)
+    graphing.histogram_percentage( contention_with_points, 0, g, 50)
 
     g.close()
 
