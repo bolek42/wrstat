@@ -39,7 +39,7 @@ else
         opcontrol --reset
         opcontrol --deinit
 #        modprobe oprofile timer=1
-#        echo 0 > /proc/sys/kernel/nmi_watchdog
+        echo 0 > /proc/sys/kernel/nmi_watchdog
         opcontrol --separate=cpu
         opcontrol --event="$event"
 
