@@ -15,7 +15,6 @@ use_operf="$( cat "$test_dir/wrstat.config" | grep "oprofile_use_operf" | cut -d
 use_operf=${use_operf,,}
 vmlinux="$( cat "$test_dir/wrstat.config" | grep "oprofile_vmlinux" | cut -d " "  -f 2-)"
 event="$( cat "$test_dir/wrstat.config" | grep "oprofile_event" | cut -d " "  -f 2-)"
-callgraph_depth="$( cat "$test_dir/wrstat.config" | grep "oprofile_callgraph_depth" | cut -d " "  -f 2-)"
 
 rm -rf "$test_dir/oprofile_data/" &>/dev/null
 mkdir "$test_dir/oprofile_data/"
@@ -41,7 +40,6 @@ else
         opcontrol --deinit
 #        modprobe oprofile timer=1
 #        echo 0 > /proc/sys/kernel/nmi_watchdog
-        opcontrol --callgraph=$callgraph_depth
         opcontrol --separate=cpu
         opcontrol --event="$event"
 
