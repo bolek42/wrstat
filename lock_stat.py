@@ -63,6 +63,7 @@ def parse_sample( filename):
     lock_classes = {}
     #to track the type of the current row we use a simple DFA
     state = "lock_class"
+    current_lock_classes = []
     for row in rows:
         if len( row) == 0:
             pass
@@ -74,20 +75,27 @@ def parse_sample( filename):
 
         elif len(row) == 1 and row[0][0] == '.':
             state = "lock_class"
+            current_lock_classes = []
+
         elif state == "lock_class":
             lock_class = parse_lock_class( row, keys)
             if not( lock_class is None):
                 lock_classes.update( { lock_class["name"] : lock_class})
+                current_lock_classes.append( lock_class)
+
         elif state == "contention_point":
             name_offset = lock_class["name"].count( ' ')  + 1
             cp = parse_contention_point( row, name_offset)
             if not( cp is None):
-                lock_class["contention-points"].append( cp)
+                for lc in current_lock_classes:
+                    lc["contention-points"].append( cp)
+
         elif state == "contention_with_point":
             name_offset = lock_class["name"].count( ' ')  + 1
             cp = parse_contention_point( row, name_offset)
             if not( cp is None):
-                lock_class["contention-with-points"].append( cp)
+                for lc in current_lock_classes:
+                    lc["contention-with-points"].append( cp)
 
     file.close()
     return lock_classes
@@ -123,8 +131,11 @@ def parse_contention_point( row, name_offset):
     cp[ "con-bounces"] = int( row[name_offset])
     cp[ "addr"] = row[name_offset + 1]
     symbol = row[name_offset + 2]
-    offset = symbol[ symbol.index( '+') + 1:]
-    symbol = symbol[ :symbol.index( '+')]
+    try:
+        offset = symbol[ symbol.index( '+') + 1:]
+        symbol = symbol[ :symbol.index( '+')]
+    except:
+        offset = ""
     cp[ "symbol"] = symbol
     cp[ "offset"] = offset
 
@@ -338,14 +349,16 @@ def plot_detailed( file_prefix, title_prefix, samples, intervall, lock_name, ran
     contention_points = {}
     for contention_point in samples[-1][ lock_name]["contention-points"]:
         symbol_name = contention_point["symbol"]
+        offset = contention_point["offset"]
         con_bounces = contention_point["con-bounces"]
-        contention_points[ symbol_name] = [ con_bounces]
+        contention_points[ "%s+%s" % (symbol_name, offset)] = [ con_bounces]
 
     contention_with_points = {}
     for contention_with_point in samples[-1][ lock_name]["contention-with-points"]:
         symbol_name = contention_with_point["symbol"]
+        offset = contention_with_point["offset"]
         con_bounces = contention_with_point["con-bounces"]
-        contention_with_points[ symbol_name] = [ con_bounces]
+        contention_with_points[ "%s+%s" % (symbol_name, offset)] = [ con_bounces]
 
     #actual plotting
     title = "%s /proc/lock_stat Top %d: %s" % ( title_prefix, rank, lock_name)
