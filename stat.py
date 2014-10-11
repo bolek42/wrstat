@@ -131,20 +131,30 @@ def plot( test_dir, stat, intervall):
     g.close()
 
 def plot_stat_series( stat, cpu, filename, title, intervall):
-    #prepare data
-    data = {}
+    #prepare graphs
+    raw = {}
     for key, value in stat[0][cpu].iteritems():
-        data[ key] = []
+        raw[ key] = []
 
     for t in range( len( stat) - 1):
         #normalize daa
         sigma = 0.0
-        for key, value in data.iteritems():
+        for key, value in raw.iteritems():
             sigma += stat[t + 1][cpu][key] - stat[t][cpu][key]
 
-        for key, value in data.iteritems():
+        for key, value in raw.iteritems():
             p = (stat[t + 1][cpu][key] - stat[t][cpu][key]) / sigma * 100.0
             value.append( ( t * intervall, p))
+
+    #reindexing for total
+    sigma = 0.0
+    for key, value in stat[0][cpu].iteritems():
+        sigma += stat[-1][cpu][key] - stat[0][cpu][key]
+
+    data = {}
+    for key, value in stat[0][cpu].iteritems():
+        p = (stat[-1][cpu][key] - stat[0][cpu][key]) / sigma * 100.0 #total
+        data[ "%s (%.2f%%)" % ( key, p)] = raw[key]
 
     #actual plotting
     g = graphing.init( title, filename)
