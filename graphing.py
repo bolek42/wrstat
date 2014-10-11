@@ -25,15 +25,28 @@ def init( title, filename, size=(640, 480)):
     Data format:
         { "curve 1" : [ (0,0), (1,1), (2,2), (3,3)],
           "curve 2" : [ (0,0), (1,1), (2,4), (3,9)]}
+
+    array=True
+        [ ("curve 1", [ (0,0), (1,1), (2,2), (3,3)]),
+          ("curve 2", [ (0,0), (1,1), (2,4), (3,9)])]
+
 """
-def series( data, g):
+def series( data, g, array=False):
     if g is None:
         print "ERROR no gnuplot object given"
         return
 
+    if not array:
+        arr = []
+        for key, value in data.iteritems():
+            arr.append((key, value) )
+
+        data = arr
+
+
     plots = []
     i = 0
-    for name, series in data.iteritems():
+    for name, series in data:
         plots.append( Gnuplot.PlotItems.Data( series,
             with_="lines linecolor rgb '%s'" % colors[ i % len( colors)], title=title_escape(str(name))))
         i += 1

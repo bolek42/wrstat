@@ -151,10 +151,10 @@ def plot_stat_series( stat, cpu, filename, title, intervall):
     for key, value in stat[0][cpu].iteritems():
         sigma += stat[-1][cpu][key] - stat[0][cpu][key]
 
-    data = {}
+    data = []
     for key, value in stat[0][cpu].iteritems():
         p = (stat[-1][cpu][key] - stat[0][cpu][key]) / sigma * 100.0 #total
-        data[ "%s (%.2f%%)" % ( key, p)] = raw[key]
+        data.append( ("%s (%.2f%%)" % ( key, p), raw[key]))
 
     #actual plotting
     g = graphing.init( title, filename)
@@ -165,6 +165,6 @@ def plot_stat_series( stat, cpu, filename, title, intervall):
     g( "set xlabel 'runtime ( sec)'")
     g( "set yrange [0:103]")
     g( "set ylabel 'Runtime %'")
-    graphing.series( data, g)
+    graphing.series( data, g, True)
     g.close()
 
