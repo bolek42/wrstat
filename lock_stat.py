@@ -229,7 +229,7 @@ def plot_samples( file_prefix, title_prefix, samples, intervall):
 
     #actual plotting
     title =  "%s /proc/lock_stat Waittime Total" % title_prefix
-    filename = "%s-waititme.svg" % file_prefix
+    filename = "%s-waittime.svg" % file_prefix
     g = graphing.init( title, filename)
     graphing.histogram_percentage( data, 0, g)
     g.close()
