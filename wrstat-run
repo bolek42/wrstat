@@ -17,7 +17,7 @@ if [ $# -lt 2 ]; then
 	echo "Usage: $0 \"test directory\" prog [arg1] [arg2] ..."
 	exit 0
 fi
-test_dir="$1"
+test_dir=$( readlink -f "$1")
 
 if [ "$(which $2 2>/dev/null)" = "" ]; then
 	echo "ERROR: \"$2\" comand or file not found"

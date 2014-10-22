@@ -25,11 +25,11 @@ def postsampling( test_dir):
 #########################################
 
 def parse( test_dir):
-    if not os.path.isfile( "%s/iostat" % test_dir):
+    if not os.path.isfile( "%s/samples/iostat" % test_dir):
         print "iostat: nothing captured"
         return None
 
-    file = open( "%s/iostat" % test_dir, "r")
+    file = open( "%s/samples/iostat" % test_dir, "r")
     raw = list( csv.reader( file, delimiter=' '))
     rows = map( lambda row: filter(lambda s: s != '', row), raw)
 

@@ -10,6 +10,6 @@ test_dir="$1"
 #init Oprofile
 if [ "$(which iostat 2>/dev/null)" != "" ]; then
     intervall="$( cat "$test_dir/wrstat.config" | grep "intervall" | cut -d " "  -f 2-)"
-    iostat -d $intervall > "$test_dir/iostat"&
+    iostat -d $intervall > "$test_dir/samples/iostat"&
     echo $! > "$test_dir/iostat.pid"
 fi
