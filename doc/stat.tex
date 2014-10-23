@@ -1,0 +1,38 @@
+\section{/proc/stat}
+
+\subsection{Description}
+    /proc/stat gives basic information on the cpu usage. It measures the time
+    that the CPU spent various states e.g. user mode, system, idle, virtual machine, etc.
+    %\_SC\_CLK\_TCK
+    It can be used to obtain a standard cpu usage graph.
+    This module requires no further configuration and only consists of one file stat.py.
+
+    %The most important values are the following:
+    %\begin{description}
+    %    \item[samples/stat\_*]
+    %        Snapshot of /proc/stat at the given time step.
+
+    %\end{description}
+%\subsection{Wrstat Module} <- not needed
+    %TODO
+
+\subsection{Created Files in Test Directory}
+    %This module creates per cpu and aggregated time series graphs, that 
+    %showing the time the cpu spent e.g. in idle, system, user and various more modes.
+    %There is also a graph, that shows the mean over time as a histogram
+    %for comparison of each cpu.
+    %description of modes?
+    For the graphs ( .svg files) the corresponding patterns are listed.
+    This module will create the following files in the test directory.
+    \begin{description}
+        \item[samples/stat\_*]
+            Snapshot of /proc/stat at the given time step.
+
+        \item[stat-cpu*.svg and stat-aggregated.svg]
+            Per CPU and aggregated time series graphs.
+
+        \item[stat-total.svg]
+            Average histogram, that show the overall usage for all CPUs in comparison.
+
+    \end{description}
+

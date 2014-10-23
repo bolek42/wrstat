@@ -1,0 +1,44 @@
+\section{/proc/diskstats}
+    The file /proc/diskstats gives basic information on disk usage.
+    It will give information on how many sectors read, written
+    and time spent on IO for each device.
+    This module consists only of the file diskstats.py .
+    Even though the sectorsize is a hardcoded constant (512),
+    this values are extracted from /sys/block/DEVICENAME/queue/hw\_sector\_size
+    to avoid later unexpected issues.
+
+\subsection{/proc/diskstats Created Files in Test Directory}
+    For the graphs ( .svg files) the corresponding patterns are listed.
+    This module will create the following files in the test directory.
+    \begin{description}
+        \item[samples/diskstats\_*]
+            Snapshot of /proc/diskstats at the given time step.
+        \item[diskstats-*.svg]
+            Read and write acces for a specific device.
+        \item[diskstats-*-time.svg]
+            Graph that shows the time spent on reading or writing for a given device.
+    \end{description}
+
+\subsection{iostat}
+    For debug reasons, there is also a module for iostat, which will handle
+    /proc/diskstats and give basic IO throughput, but no further information.
+    So this module is deprecated.
+    This module will create the following files in the test directory.
+    For the graphs ( .svg files) the corresponding patterns are listed.
+    \begin{description}
+        \item[samples/iostat]
+            Output of iostat -d at the given interval.
+
+        \item[iostat.pid]
+            Contains the id of the running iostat process.
+            This is only used to shut down iostat without using e.g. killall.
+
+        \item[sectorsizes]
+            Sectorsizes for all devices.
+
+        \item[iostat-read.svg and iostat-write.svg]
+            This graphs will show read or write access for all devices in comparison.
+
+        \item[iostat-*.svg]
+            Read and write acces for a specific device.
+    \end{description}

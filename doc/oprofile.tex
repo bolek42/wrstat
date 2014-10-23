@@ -1,0 +1,127 @@
+\section{OProfile}
+    %TODO how to use short
+    OProfile is a system wide performance analysis tool, to analyze the runtime
+    of single applications and even of kernel methods.
+    It will periodically issue non maskable interrupts (NMI)
+    and update a counter corresponding to the currently interrupted code.
+
+\subsection{Wrstat Module}
+    \subsubsection{Source Files}
+    The OProfile module contains the following files:
+    \begin{description}
+        \item[oprofile-init.sh test\_directory]
+            This script will initialize OProfile for the specified test directory
+            using either opcontrol or operf.
+            This script will be called by oprofile.py presampling().
+
+        \item[oprofile-deinit.sh test\_directory]
+            This script will deinitialize OProfile and write the opreport
+            output to samples/oprofile.
+
+        \item[oprofile.py]
+            The actual modules used by this tool.
+
+    \end{description}
+
+    \subsubsection{Created Files in Test Directory}
+    The created graphs will show the CPU usage by applications ( actual binaries)
+    or symbol name ( methods)
+
+    For the graphs ( .svg files) the corresponding patterns are listed.
+    This module will create the following files in the test directory.
+    \begin{description}
+        \item[oprofile\_data/]
+            Contains all collected data and will be passed to OProfile
+            as --session-dir argument. It can be used to create custom
+            results with opreport.
+
+        \item[samples/oprofile]
+            This is the output of opreport -l ( list all symbols) and
+            the actual file that is beeing parsed.
+
+        \item[oprofile-*-app.svg and oprogile-*-sym.svg]
+            Graphs grouped either by symbol or application names.
+
+        \item[oprofile-*-aggregated-*.svg and oprofile-*-cpu*-*.svg]
+            Are either aggregated or per cpu graphs.
+
+        \item[oprofile-filter-all-*.svg and oprofile-filter-path\_to\_filter-*.svg]
+            Graphs filtered by function names for a particuar or all filter in 
+            conjunction.
+            If a filter creates an empty data set, its graph will not be created.
+
+        \item[oprofile-app-filter-all*.svg and oprofile-app-filter-appname-*.svg]
+            Graphs filtered by application names for a particuar or all filter in 
+            conjunction.
+            If a filter creates an empty data set, its graph will not be created.
+    \end{description}
+
+    \subsubsection{Configuration}
+    There are are the following configuration options available in wrstat.config.
+    \begin{description}
+        \item[oprofile\_use\_operf [true,false]]
+            If value is true, operf will be used, opcontrol otherwise.
+            Although opcontrol is deprecated, it seems to work more stable than operf.
+        \item[oprofile\_event]
+            The default event, that is used by OPRofile for triggering NMI.
+            The default event is 
+            \begin{lstlisting}
+CPU_CLK_UNHALTED:100000:0:1:1
+            \end{lstlisting}
+            which will trigger a NMI every 100.000 cycles, the CPU is running
+            in kernel or user mode.
+            This can be used to adopt the sampling rate used by OPRofile.
+        \item[oprofile\_vmlinux]
+            Path to the current vmlinux ELF binary.
+            It is not possible to use the vmlinuz file as this is zipped and also
+            contains a raw decompressor, that will uncompress the kernel at runtime.
+            Since verion 1.0.0 OProfile does not require the vmlinux image anymore 
+            to resolve symbol names, as it will use /proc/kallsyms instead.
+            %TODO where to find?
+        \item[oprofile\_missing\_binaries]
+            Comma separated list of paths to search for additional binaries ( e.g. .ko files).
+            Since Kernel version 2.6 this is needed to find modules, which
+            are usually located in /lib/modules/version/kernel.
+            It is also possible to pass user space binaries.
+        \item[oprofile\_sym\_filter]
+            Space separated list of symbol name filters invoked by this module.
+            Those are files containing function names to show
+            and are specified by thier path relative to the tool directory.
+        \item[oprofile\_app\_filter]
+            Space separated list of applications to filter for.
+    \end{description}
+
+
+    \subsubsection{Filtering}
+    As OProfile is configured to run in a system wide configuration there might be alot
+    of methods listed, that are not of interest and mess up the results.
+    For this reason this module implements filtering for symbol and application names.
+    The most basic filtering method is the application filter,
+    that will create individual plots for a given set of application names provided by OPRofile.
+    Filtering for symbol names allows to create extra graphs for individual subsets of functions.
+    A single filter is a file containing all function names of interest
+    and can be created from a list of non stripped binaries by wrstat-filer-create.
+    This even allows to monitor small subsystems of an application by using 
+    object files of specific source file.
+
+\subsection{Encountered Problems}
+    %TODO output description
+    \subsubsection{opcontrol vs. operf}
+    There are basically two different ways to start the OProfile daemon: operf and opcontrol,
+    which is deprecated since version 0.9.8 and was removed in 1.0.0.
+    Both offer mostly the same functionality but are slightly different in the usage:
+    opcontrol is a tool to configure, start and stop the daemon
+    whereas operf will is a one-line call to start the daemon, with specified options.
+    Since either OProfile or operf could cause problems or is even unavailable
+    ( depending on operation system, machine and version), wrstat supports both.
+    To choose one option just modify oprofile\_use\_operf in wrstat.config.
+
+    \subsection{Timer Mode}
+    Hardware performance monitor counters ( PMC) will count hardware events
+    and issues an interrupt on counter overflow.
+    Per default OPRofile will use events such as CPU\_CLK\_UNHALTED to periodically
+    interrupt the CPU.
+    On some machines and CPU types ( e.g. on virtual machines) PMC may be not available,
+    so usual timer interrupts can be used, by passing the timer=1 to the OPRofile kernel module (prior v1.0.0).
+
+%TODO call graph

@@ -1,0 +1,94 @@
+\section{/proc/lock\_stat}
+
+The kernel lock usage statistic is available via /proc/lock\_stat 
+and has to be enabled manually on the most systems, by recompiling the kernel.
+The reason for this, that this feature make use of Lockdep, which will
+hook several kernel lock methods, maps the lock instances to a lock classes of the same type
+and though create slightly additional load.
+A lock class is a collection of actual lock instances, that are used in the same context,
+for example in a file system driver, each inode has its own lock instance,
+but they are classified as the same lock class as they are used in the same code regions.
+
+According to the documentary the actual hooking mechanism is implemented as follows:
+
+%\begin{figure}[H]
+\begin{center}
+    \begin{tikzpicture}[-,>=stealth',shorten >=1pt,auto,node distance=2.0cm,
+        thin,main node/.style={line width=0,scale=0.5,font=\sffamily\Large\bfseries}]
+            \node[main node] (0) {\_\_acquire() //hook};
+            \node[main node] (1) [below of=0] {lock()};
+            \node[main node] (2) [below of=1, xshift=4cm] {\_\_contended() //hook};
+            \node[main node] (3) [below of=2] {$<$wait$>$};
+            \node[main node] (4) [below of=3, xshift=-4cm] {\_\_acquired() //hook};
+            \node[main node] (5) [below of=4] {$<$hold$>$};
+            \node[main node] (6) [below of=5] {\_\_release() //hook};
+            \node[main node] (7) [below of=6] {unlock()};
+
+            \path[->, thick,every node/.style={font=\sffamily\small}]
+                (0) edge node {} (1)
+                (1) edge node {} (2)
+                (2) edge node {} (3)
+                (3) edge node {} (4)
+                (1) edge node {} (4)
+                (6) edge node {} (7);
+            \path[dashed,->, thick,every node/.style={font=\sffamily\small}]
+                (4) edge node {} (5)
+                (5) edge node {} (6);
+
+    \end{tikzpicture}
+\end{center}
+%\end{figure}
+
+The hooks are used to track the state of lock manipulating methods.
+A lock is called contended, if an acquisition has to wait.
+Wait time is defined as the the time between the \_\_contended and \_\_acquired hooks.
+As we are dealing with multiple lock instances, wait and hold times of more
+than one second per second is possible.
+The line of code, that tried to acquire a lock, is contended called contention point.
+In addition the acquisition, that caused the contention is also tracked.
+Lockstat will store up to four contention points and points, that caused a contention.
+
+
+\subsection{Wrstat Module}
+%wait and holdtime in $\my$s 
+%time unit converted to ms
+%provided information
+%DFA
+    \subsubsection{Source Files}
+    The lock\_stat module contains the following files:
+    \begin{description}
+        \item[lock\_stat-reset.sh test\_directory]
+            This script will be called by the presampling method and will reset lock\_stat.
+            This done by writing "0" to /proc/lock\_stat.
+            According to the documentary this should also disable lock\_stat, but this 
+            behavior was not observed on any system we have used.
+
+        \item[lock\_stat.py]
+            The actual modules used by wrstat.
+    \end{description}
+
+    \subsubsection{Filtering}
+    This module supports filtering for symbol names, but it will not use
+    the actual lock class name, but corresponding contention points. So if a lock class
+    was contended or caused a contention by a method listed in the filter, it will pass.
+    Otherwise it will be discarded.
+    Filters can be passed by the lock\_stat\_filter option in wrstat.config as space separated list.
+    For each filter separated graphs are created.
+
+    \subsubsection{Created Files in Test Directory}
+    For the graphs ( .svg files) the corresponding patterns are listed.
+    This module will create the following files in the test directory.
+    \begin{description}
+        \item[samples/lock\_stat\_*.svg:]
+            Snapshot of /proc/lock\_stat took at the specified time step.
+        \item[lock\_stat-*-holdtime.svg and lock\_stat-*-waittime.svg]
+            Stacked bar chart of the locks either for total wait- or holdtime.
+        \item[lock\_stat-*-holdtime-top.svg and lock\_stat-*-waittime-top.svg:]
+            Time series graph for either wait- or holdtime for the top waiting locks.
+        \item[lock\_stat-*-holdtime-top-*.svg:]
+            For each lock class listed in the top-graphs, a corresponding detailed lock view is created.
+            This shows, wait- and holdtime, acquisition and contentions of the lock as time series.
+            In addition there are bar charts for contentions points and points, we are contendning with.
+        \item[lock\_stat-filter-*.svg:]
+            Filtered graphs for the given filter, or all filters.
+    \end{description}
