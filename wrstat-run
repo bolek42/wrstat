@@ -26,6 +26,7 @@ fi
 cmd=${@:2:$#}
 
 #prepare testdir
+rm -f "$test_dir"/*
 mkdir -p "$test_dir"
 if [ ! -d "$test_dir" ]; then
 	echo "ERROR: failed to created $test_dir directory."
@@ -41,8 +42,8 @@ fi
 cp "$tool_path/wrstat.config" "$test_dir/wrstat.config"
 echo "$cmd" > "$test_dir/cmd"
 sample_dir="$test_dir/samples"
-mkdir -p "$test_dir/samples"
-rm -f "$test_dir/samples"/*
+rm -f "$test_dir/samples" 2>/dev/null
+mkdir "$test_dir/samples" 2>/dev/null
 
 #starting deamon
 runasroot="$( cat "$test_dir/wrstat.config" | grep "runasroot" | cut -d " "  -f 2-)"

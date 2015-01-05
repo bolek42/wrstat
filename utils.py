@@ -38,6 +38,11 @@ def load_modules( modnames, mod_dir):
 def get_tool_path():
     return os.path.dirname( os.path.realpath( __file__))
 
+def log(data, filename):
+    f = open(filename, "a")
+    f.write(data+"\n")
+    f.close()
+
 #this methods implement a queued copy in an extra thread
 #the queue used is thread safe
 #this is the actual method that can be used for copy

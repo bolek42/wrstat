@@ -3,6 +3,7 @@
 import os
 import csv
 import shutil
+import operator
 
 import graphing
 from utils import *
@@ -98,7 +99,7 @@ def plot( test_dir, stat, intervall):
     #aggregate
     title = "/proc/stat Aggreagted"
     filename = "%s/stat-aggreagted.svg" % test_dir
-    plot_stat_series( stat, "cpu", filename, title, intervall)
+    plot_stat_series( test_dir, stat, "cpu", filename, title, intervall)
 
     #prepare data
     data = {}
@@ -115,7 +116,7 @@ def plot( test_dir, stat, intervall):
         #per cpu sampled
         filename = "%s/stat-cpu%d.svg" % ( test_dir, cpu)
         title = "/proc/stat CPU %d" % cpu
-        plot_stat_series( stat, "cpu%d" % cpu, filename, title, intervall)
+        plot_stat_series( test_dir, stat, "cpu%d" % cpu, filename, title, intervall)
 
     #determine width
     # 400 pixel offset
@@ -130,7 +131,7 @@ def plot( test_dir, stat, intervall):
     graphing.histogram_percentage( data, 0, g, 15)
     g.close()
 
-def plot_stat_series( stat, cpu, filename, title, intervall):
+def plot_stat_series( test_dir, stat, cpu, filename, title, intervall):
     #prepare graphs
     raw = {}
     for key, value in stat[0][cpu].iteritems():
@@ -152,9 +153,17 @@ def plot_stat_series( stat, cpu, filename, title, intervall):
         sigma += stat[-1][cpu][key] - stat[0][cpu][key]
 
     data = []
+    aggregated = {}
     for key, value in stat[0][cpu].iteritems():
         p = (stat[-1][cpu][key] - stat[0][cpu][key]) / sigma * 100.0 #total
         data.append( ("%s (%.2f%%)" % ( key, p), raw[key]))
+        if cpu == "cpu": #aggregated
+            aggregated[ "CPU %s %.3f%%" % (key, p)] = p
+
+    if cpu == "cpu":
+        for key in sorted( aggregated.items(), key=operator.itemgetter(1), reverse=True):
+            log( key[0], "%s/stat.txt" % test_dir)
+        log( "", "%s/stat.txt" % test_dir)
 
     #actual plotting
     g = graphing.init( title, filename)

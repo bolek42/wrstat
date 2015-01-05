@@ -104,7 +104,9 @@ def plot( test_dir, data, intervall):
         #preparing data
         io = { "read" : [], "write" : []}
         time = { "read" : [], "write" : []}
-        sigma = 0.0
+        aggregated_read = 0.0
+        aggregated_write = 0.0
+        n = 0.0
         for t in range( len( samples) - 1):
             read  = ( samples[t + 1][name]["sectors-read"] -
                 samples[t][name]["sectors-read"])
@@ -114,7 +116,9 @@ def plot( test_dir, data, intervall):
             read *= sectorsize / 1048576.0
             write *= sectorsize / 1048576.0
 
-            sigma += read + write
+            aggregated_read += read
+            aggregated_write += write
+            n += 1
 
             #normalize
             io[ "read"].append( ((t * intervall), read * intervall))
@@ -130,8 +134,16 @@ def plot( test_dir, data, intervall):
             time[ "write"].append( ((t * intervall), tw * intervall))
 
         #determine if device has io throughput
-        if sigma == 0:
+        if read + write == 0:
             continue
+
+        #log aggreagted
+        if n > 0:
+            aggregated_read /= n
+            aggregated_write /= n
+            log( "%s:\t%.2f MiB/s read\t\t%.2f MiB/s write\t\t%.2f MiB/s total" %
+                (name, aggregated_read, aggregated_write, aggregated_read + aggregated_write),
+                "%s/stat.txt" % test_dir)
 
         #collect data for all devices
         io_read[ name] = io["read"]
