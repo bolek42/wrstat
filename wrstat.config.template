@@ -1,4 +1,4 @@
-modules diskstats lock_stat stat oprofile iostat
+modules diskstats lock_stat stat oprofile meminfo
 runasroot true
 intervall 1
 oprofile_use_operf False
